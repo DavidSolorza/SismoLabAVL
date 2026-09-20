@@ -1,0 +1,181 @@
+/* ==========================================================================
+   SismoLab AVL - Design System & CSS Variables (Warm Aesthetics)
+   Universidad de Caldas
+   ========================================================================== */
+
+:root {
+  --bg-main: #14110F;
+  --bg-card: rgba(30, 25, 22, 0.85);
+  --bg-card-hover: rgba(42, 35, 31, 0.95);
+  --border-warm: rgba(224, 86, 56, 0.2);
+  --border-warm-glow: rgba(245, 158, 11, 0.4);
+
+  --terracotta: #E05638;
+  --terracotta-glow: rgba(224, 86, 56, 0.35);
+  --coral: #FF6B4A;
+  --amber: #F59E0B;
+  --amber-glow: rgba(245, 158, 11, 0.35);
+  --yellow-warm: #EAB308;
+  --emerald: #10B981;
+
+  --p1-red: #EF4444;
+  --p2-amber: #F59E0B;
+  --p3-yellow: #EAB308;
+
+  --text-bright: #FFFDF9;
+  --text-sub: #D1C7BD;
+  --text-muted: #9E9287;
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(224, 86, 56, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(20, 17, 15, 1) 0%, transparent 100%);
+  background-attachment: fixed;
+  color: var(--text-bright);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphism Container */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-warm);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-warm-glow);
+}
+
+/* Header & Typography */
+.gradient-text {
+  background: linear-gradient(135deg, #FFFDF9 0%, #FF6B4A 50%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.badge-p1 {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.badge-p2 {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.badge-p3 {
+  background: rgba(234, 179, 8, 0.18);
+  color: #FDE047;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--terracotta) 0%, var(--coral) 100%);
+  color: #FFFDF9;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--terracotta-glow);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--terracotta-glow);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: rgba(42, 35, 31, 0.8);
+  color: var(--text-bright);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-warm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: rgba(58, 48, 43, 0.9);
+  border-color: var(--amber);
+  transform: translateY(-1px);
+}
+
+/* Tree Visualizer Node Styles */
+.avl-node-card {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.avl-node-card:hover {
+  transform: scale(1.08) translateY(-4px);
+  z-index: 20;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #14110F;
+}
+::-webkit-scrollbar-thumb {
+  background: #3A302B;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terracotta);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(224, 86, 56, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}

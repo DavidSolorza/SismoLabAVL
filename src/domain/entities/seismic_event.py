@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+"""
+Seismic Event Domain Entity / Entidad de Dominio Evento Sísmico
+SismoLab AVL - Universidad de Caldas
+
+Representa el Evento Sísmico con su Clave Compuesta K = (P, M, I) e información operacional.
+Represents the Seismic Event with its Composite Key K = (P, M, I) and operational telemetry.
+"""
+
+from datetime import datetime
+from typing import Dict, Any, Optional
+from src.domain.value_objects.composite_key import CompositeKeyK
+from src.domain.value_objects.coordinates import GeographicCoordinates
+from src.domain.rules import calculate_seismic_priority
+
+class SeismicEvent:
+    """
+    Entidad de Dominio Evento Sísmico / Seismic Event Domain Entity
+    """
+    def __init__(
+        self,
+        event_id: int,
+        magnitude: float,
+        depth: float,
+        coordinates: GeographicCoordinates,
+        station_id: str,
+        is_populated_zone: bool,
+        timestamp: Optional[str] = None,
+        status: str = "ACTIVO"
+    ):
+        self.id = event_id
+        self.magnitude = round(float(magnitude), 1)
+        self.depth = round(float(depth), 2)
+        self.coordinates = coordinates
+        self.station_id = station_id
+        self.is_populated_zone = is_populated_zone
+        self.timestamp = timestamp or datetime.utcnow().isoformat() + "Z"
+        self.status = status
+
+        # Calcular prioridad P (1, 2, 3) y construir la Clave Compuesta K = (P, M, I)
+        # Calculate priority P (1, 2, 3) and construct Composite Key K = (P, M, I)
+        self.priority = calculate_seismic_priority(self.magnitude, self.depth, self.is_populated_zone)
+        self.composite_key = CompositeKeyK(
+            priority=self.priority,
+            magnitude=self.magnitude,
+            identifier=self.id
+        )
+
+    def update_telemetry(self, new_magnitude: float, new_depth: float) -> bool:
+        """
+        Actualiza los parámetros sísmicos y re-calcula la Clave K si cambia la prioridad.
+        Updates seismic parameters and re-calculates Key K if priority changes.
+        Returns True if priority changed.
+        """
+        old_priority = self.priority
+        self.magnitude = round(float(new_magnitude), 1)
+        self.depth = round(float(new_depth), 2)
+        self.priority = calculate_seismic_priority(self.magnitude, self.depth, self.is_populated_zone)
+        
+        self.composite_key = CompositeKeyK(
+            priority=self.priority,
+            magnitude=self.magnitude,
+            identifier=self.id
+        )
+        return old_priority != self.priority
+
+    def archive(self) -> None:
+        """Marca el evento como archivado / Marks event as archived"""
+        self.status = "ARCHIVADO"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "formatted_id": self.composite_key.formatted_id(),
+            "prioridad": self.priority,
+            "magnitud": self.magnitude,
+            "profundidad": self.depth,
+            "coordenadas": self.coordinates.to_dict(),
+            "estacion_id": self.station_id,
+            "zona_poblada": self.is_populated_zone,
+            "timestamp": self.timestamp,
+            "estado": self.status,
+            "clave_k": self.composite_key.to_dict()
+        }
+
+    def __repr__(self) -> str:
+        return f"EventoSismico({self.composite_key.formatted_id()}, P={self.priority}, M={self.magnitude}, D={self.depth}km)"

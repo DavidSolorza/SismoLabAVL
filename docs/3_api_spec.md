@@ -1,0 +1,204 @@
+# 📡 Especificación de API REST / REST API Specification
+## Sistema Backend SismoLab AVL - Universidad de Caldas
+
+---
+
+### 1. Resumen Ejecutivo / Executive Summary
+
+**Español:**
+Este documento especifica formalmente los contratos HTTP RESTful para la interacción con los cortes verticales (Vertical Slices) del backend de **SismoLab AVL**. La API expone operaciones para registrar eventos, actualizar correcciones en caliente, procesar colas de telemetría, deshacer acciones y archivar subárboles del AVL.
+
+**English:**
+This document formally specifies the HTTP RESTful contracts for interacting with the Vertical Slices of the **SismoLab AVL** backend. The API exposes operations to register events, apply hot corrections, process telemetry queues, undo actions, and archive AVL subtrees.
+
+---
+
+### 2. Endpoints y Cortes Verticales / Endpoints & Vertical Slices
+
+---
+
+#### 2.1. Slice: Crear Evento Sísmico (`POST /api/v1/eventos`)
+**Comando:** `CrearEventoCommand`  
+**Descripción:** Registra un nuevo evento sísmico en el sistema, calcula su clave $K = (P, M, I)$ e inserta el nodo en el árbol AVL (y en el BST de benchmarking).
+
+##### Request Payload (JSON):
+```json
+{
+  "id": 1001,
+  "magnitud": 6.5,
+  "profundidad": 15.0,
+  "latitud": 5.06889,
+  "longitud": -75.51738,
+  "estacion_id": "EST-MANIZALES-01",
+  "zona_poblada": true
+}
+```
+
+##### Respuestas / Responses:
+- **`201 Created`**: Evento creado con éxito.
+```json
+{
+  "success": true,
+  "message": "Evento sísmico creado e insertado en AVL con éxito.",
+  "data": {
+    "id": 1001,
+    "composite_key": {
+      "P": 1,
+      "M": 6.5,
+      "I": 1001
+    },
+    "prioridad": 1,
+    "magnitud": 6.5,
+    "profundidad": 15.0,
+    "estado": "ACTIVO",
+    "avl_height": 1
+  }
+}
+```
+
+- **`400 Bad Request`**: Clave duplicada o valores fuera de rango.
+```json
+{
+  "success": false,
+  "error_code": "EVENT_ALREADY_EXISTS",
+  "message": "Ya existe un evento sísmico registrado con el identificador 1001."
+}
+```
+
+- **`422 Unprocessable Entity`**: Error de validación de esquema Pydantic.
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "magnitud"],
+      "msg": "ensure this value is greater than or equal to -2.0",
+      "type": "value_error.number.not_ge"
+    }
+  ]
+}
+```
+
+---
+
+#### 2.2. Slice: Corregir Evento Sísmico (`PUT /api/v1/eventos/{id}/corregir`)
+**Comando:** `CorregirEventoCommand`  
+**Descripción:** Corrige los parámetros de magnitud o profundidad de un sismo. Si la prioridad $P$ cambia, la clave $K$ se re-calcula y el nodo es re-ubicado en el AVL.
+
+##### Request Payload (JSON):
+```json
+{
+  "nueva_magnitud": 7.2,
+  "nueva_profundidad": 10.0,
+  "razon_correccion": "Recalibración de sensor secundario"
+}
+```
+
+##### Respuestas / Responses:
+- **`200 OK`**: Evento re-ubicado correctamente en el AVL.
+```json
+{
+  "success": true,
+  "message": "Evento sísmico corregido y re-estructurado en el árbol AVL.",
+  "data": {
+    "id": 1001,
+    "clave_anterior": {"P": 2, "M": 6.5, "I": 1001},
+    "nueva_clave": {"P": 1, "M": 7.2, "I": 1001},
+    "rebalanceo_ejecutado": true
+  }
+}
+```
+
+- **`404 Not Found`**: El evento especificado no existe en el AVL.
+```json
+{
+  "success": false,
+  "error_code": "EVENT_NOT_FOUND",
+  "message": "No se encontró ningún evento sísmico con el ID 9999."
+}
+```
+
+---
+
+#### 2.3. Slice: Procesar Cola de Reportes (`POST /api/v1/reportes/procesar`)
+**Comando:** `ProcesarReporteCommand`  
+**Descripción:** Extrae el siguiente reporte de la Cola FIFO de recepción y lo convierte en un evento sísmico formal en el AVL.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Reporte procesado.
+```json
+{
+  "success": true,
+  "message": "Reporte procesado desde la cola FIFO e insertado en AVL.",
+  "data": {
+    "reportes_restantes_en_cola": 3,
+    "evento_creado_id": 1002
+  }
+}
+```
+
+---
+
+#### 2.4. Slice: Deshacer Última Acción (`POST /api/v1/sistema/deshacer`)
+**Comando:** `DeshacerAccionCommand`  
+**Descripción:** Desapila la última operación ejecutada de la Pila LIFO (Undo Stack) y revierte el cambio en el AVL.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Acción revertida.
+```json
+{
+  "success": true,
+  "message": "Última acción revertida exitosamente.",
+  "data": {
+    "accion_revertida": "CREAR_EVENTO",
+    "evento_afectado_id": 1001
+  }
+}
+```
+
+---
+
+#### 2.5. Slice: Archivar Rama del AVL (`POST /api/v1/avl/archivar-rama`)
+**Comando:** `ArchivarRamaCommand`  
+**Descripción:** Poda y archiva un subárbol completo del AVL cuya prioridad o magnitud esté por debajo de un umbral de criticidad.
+
+##### Request Payload (JSON):
+```json
+{
+  "prioridad_minima": 3,
+  "guardar_json": true
+}
+```
+
+##### Respuestas / Responses:
+- **`200 OK`**: Rama podada y archivada.
+```json
+{
+  "success": true,
+  "message": "Rama de prioridad baja archivada y podada del árbol AVL.",
+  "data": {
+    "nodos_archivados": 4,
+    "nueva_altura_avl": 2
+  }
+}
+```
+
+---
+
+#### 2.6. Endpoint de Auditoría y Métricas (`GET /api/v1/avl/metricas`)
+**Descripción:** Retorna el factor de balanceo, altura, total de nodos, comparativa BST vs AVL y estado de los Modos Normal/Estrés.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Métricas calculadas.
+```json
+{
+  "success": true,
+  "data": {
+    "total_nodos": 15,
+    "altura_avl": 4,
+    "altura_bst": 7,
+    "eficiencia_busqueda_avl_vs_bst": "42.8% más rápido / faster",
+    "modo_operacion": "NORMAL",
+    "es_avl_valido": true
+  }
+}
+```
