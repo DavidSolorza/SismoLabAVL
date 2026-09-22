@@ -290,7 +290,7 @@ export default function AVLVisualizer({
   loading = false
 }) {
   const [viewMode, setViewMode] = useState('dual'); // 'dual' | 'avl' | 'bst'
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.8); // Predeterminado a 80% (20% menos de saturación)
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -348,7 +348,7 @@ export default function AVLVisualizer({
   const handleZoomIn = () => setZoom(prev => Math.min(parseFloat((prev + 0.15).toFixed(2)), 3.0));
   const handleZoomOut = () => setZoom(prev => Math.max(parseFloat((prev - 0.15).toFixed(2)), 0.25));
   const handleResetView = () => {
-    setZoom(1);
+    setZoom(0.8);
     setPan({ x: 0, y: 0 });
   };
 
@@ -779,7 +779,7 @@ export default function AVLVisualizer({
             onClick={handleResetView}
             className="btn-secondary"
             style={{ padding: '3px 7px', border: 'none', background: '#FFFFFF', fontSize: '0.72rem', fontWeight: 800 }}
-            title="Restablecer zoom al 100%"
+            title="Restablecer zoom predeterminado (80%)"
           >
             {Math.round(zoom * 100)}%
           </button>
