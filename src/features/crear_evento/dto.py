@@ -4,7 +4,7 @@ DTOs for crear_evento Vertical Slice / DTOs para crear_evento
 SismoLab AVL - Universidad de Caldas
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 class CrearEventoDTO(BaseModel):
@@ -15,6 +15,7 @@ class CrearEventoDTO(BaseModel):
     longitud: float = Field(..., ge=-180.0, le=180.0, description="Longitud epicentral / Longitude")
     estacion_id: str = Field(default="EST-MANIZALES-01", description="Código de la estación / Station code")
     zona_poblada: bool = Field(default=False, description="¿Afecta área habitada? / Populated zone flag?")
+    timestamp: Optional[str] = Field(default=None, description="Instante de ocurrencia en UTC ISO 8601 (ej: 2026-09-22T10:30:00Z)")
 
 
 class EventoRespuestaDTO(BaseModel):

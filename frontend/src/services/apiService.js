@@ -142,3 +142,36 @@ export async function clearAllTree(cargarMuestras = false) {
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al limpiar el árbol'));
   return data;
 }
+
+// --------------------------------------------------
+// RELOJ DE SIMULACIÓN / SIMULATION CLOCK
+// --------------------------------------------------
+
+export async function fetchSimulationClock() {
+  const res = await fetch(`${API_BASE}/escenario/reloj`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al consultar reloj de simulación'));
+  return data;
+}
+
+export async function setSimulationClock(relojIso) {
+  const res = await fetch(`${API_BASE}/escenario/reloj`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reloj: relojIso })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al fijar reloj de simulación'));
+  return data;
+}
+
+export async function advanceSimulationClock({ minutes = 0, hours = 0, days = 0, seconds = 0 }) {
+  const res = await fetch(`${API_BASE}/escenario/reloj/avanzar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ minutos: minutes, horas: hours, dias: days, segundos: seconds })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al avanzar reloj de simulación'));
+  return data;
+}

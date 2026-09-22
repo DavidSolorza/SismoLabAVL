@@ -6,6 +6,7 @@ import MetricsBanner from './components/MetricsBanner';
 import EventList from './components/EventList';
 import QueueViewer from './components/QueueViewer';
 import PresetsModal from './components/PresetsModal';
+import ClockModal from './components/ClockModal';
 import Toast from './components/Toast';
 
 import {
@@ -15,7 +16,7 @@ import {
 import {
   fetchFullDashboardState, fetchMetrics, fetchEvents, fetchTreeHierarchy, fetchBstHierarchy,
   createEvent, correctEvent, enqueueReport, processNextReport, undoLastAction, archiveBranch,
-  setOperationalMode, clearAllTree
+  setOperationalMode, clearAllTree, setSimulationClock, advanceSimulationClock
 } from './services/apiService';
 import { getAvailableId } from './data/predefinedEvents';
 
@@ -37,6 +38,8 @@ export default function App() {
   const [isEventsOpen, setIsEventsOpen] = useState(false);   // Catálogo de Eventos
   const [isQueueOpen, setIsQueueOpen] = useState(false);     // Cola FIFO de Telemetría
   const [isPresetsOpen, setIsPresetsOpen] = useState(false); // Catálogo Rápido de Sismos
+  const [isClockOpen, setIsClockOpen] = useState(false);     // Reloj de Simulación
+  const [simulationClock, setSimulationClockState] = useState('2026-09-22T12:00:00Z');
 
   const showToast = (message, type = 'success', options = {}) => {
     // Si es una operación exitosa de rutina ('success'), no mostrar toast invasivo
@@ -56,6 +59,9 @@ export default function App() {
       setEvents(data.eventos || []);
       setTreeData(data.avl_tree);
       setBstData(data.bst_tree);
+      if (data.reloj_simulacion) {
+        setSimulationClockState(data.reloj_simulacion);
+      }
     } catch (err) {
       // Fallback de contingencia a consultas paralelas separadas si el endpoint unificado fallase
       try {
@@ -263,6 +269,29 @@ export default function App() {
     );
   };
 
+  // Control del Reloj de Simulación (Ajuste manual y avance)
+  const handleSetClock = async (newIso) => {
+    try {
+      const res = await setSimulationClock(newIso);
+      setSimulationClockState(res.reloj_simulacion);
+      showToast(res.message || 'Reloj fijado exitosamente', 'success', { title: 'Reloj de Simulación' });
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error', { title: 'Fallo al Fijar Reloj' });
+    }
+  };
+
+  const handleAdvanceClock = async (delta) => {
+    try {
+      const res = await advanceSimulationClock(delta);
+      setSimulationClockState(res.reloj_simulacion);
+      showToast(res.message || 'Reloj avanzado exitosamente', 'success', { title: 'Reloj Avanzado' });
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error', { title: 'Fallo al Avanzar Reloj' });
+    }
+  };
+
   // -------------------------------------------------------------------------
   // GESTIÓN DINÁMICA DE LATERALES PARA MODALES MULTI-VENTANA COMPACTOS
   // -------------------------------------------------------------------------
@@ -271,6 +300,7 @@ export default function App() {
   // siempre 100% visible para interactuar con los árboles AVL y BST.
   const modalSlots = useMemo(() => {
     const preferences = {
+      clock: ['top-left', 'bottom-left', 'top-right', 'bottom-right'],
       eventModal: ['top-right', 'bottom-right', 'top-left', 'bottom-left'],
       presets: ['bottom-right', 'top-right', 'bottom-left', 'top-left'],
       metrics: ['top-left', 'bottom-left', 'top-right', 'bottom-right'],
@@ -279,6 +309,7 @@ export default function App() {
     };
 
     const status = {
+      clock: isClockOpen,
       eventModal: isModalOpen,
       presets: isPresetsOpen,
       metrics: isMetricsOpen,
@@ -315,7 +346,7 @@ export default function App() {
       positions: assigned,
       getHeight
     };
-  }, [isModalOpen, isPresetsOpen, isMetricsOpen, isEventsOpen, isQueueOpen]);
+  }, [isModalOpen, isPresetsOpen, isMetricsOpen, isEventsOpen, isQueueOpen, isClockOpen]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -334,6 +365,8 @@ export default function App() {
         onOpenMetricsModal={() => setIsMetricsOpen(true)}
         onOpenEventsModal={() => setIsEventsOpen(true)}
         onOpenQueueModal={() => setIsQueueOpen(true)}
+        onOpenClockModal={() => setIsClockOpen(true)}
+        simulationClock={simulationClock}
         onUndo={handleUndo}
         onArchiveBranch={handleArchiveBranch}
         onClearTree={handleClearTree}
@@ -356,6 +389,7 @@ export default function App() {
         onSubmit={handleModalSubmit}
         editEvent={editEvent}
         events={events}
+        simulationClock={simulationClock}
         position={modalSlots.positions.eventModal || 'top-right'}
         maxHeight={modalSlots.getHeight(modalSlots.positions.eventModal)}
       />
@@ -422,6 +456,17 @@ export default function App() {
           loading={loading}
         />
       </ModalDialog>
+
+      {/* 6. Panel Lateral de Reloj de Simulación (UTC) */}
+      <ClockModal
+        isOpen={isClockOpen}
+        onClose={() => setIsClockOpen(false)}
+        simulationClock={simulationClock}
+        onAdvanceClock={handleAdvanceClock}
+        onSetClock={handleSetClock}
+        position={modalSlots.positions.clock || 'top-left'}
+        maxHeight={modalSlots.getHeight(modalSlots.positions.clock)}
+      />
 
       {/* Notificaciones Flotantes Toast */}
       <Toast toast={toast} onClose={() => setToast(null)} />

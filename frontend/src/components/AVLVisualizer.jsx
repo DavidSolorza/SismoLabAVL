@@ -287,7 +287,9 @@ export default function AVLVisualizer({
   currentMode = 'NORMAL',
   eventsCount = 0,
   queueCount = 0,
-  loading = false
+  loading = false,
+  simulationClock = '2026-09-22T12:00:00Z',
+  onOpenClockModal
 }) {
   const [viewMode, setViewMode] = useState('dual'); // 'dual' | 'avl' | 'bst'
   const [zoom, setZoom] = useState(0.8); // Predeterminado a 80% (20% menos de saturación)
@@ -442,6 +444,31 @@ export default function AVLVisualizer({
         }}>
           AVL: <strong>h={avlHeight}</strong> • BST: <strong>h={bstHeight}</strong>
         </span>
+
+        <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Reloj de Simulación Explícito (UTC) */}
+        <button
+          onClick={onOpenClockModal}
+          className="btn-secondary"
+          style={{
+            padding: '3px 8px',
+            fontSize: '0.68rem',
+            fontWeight: 800,
+            borderRadius: '6px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontFamily: 'var(--font-mono)',
+            backgroundColor: '#EEF2FF',
+            color: 'var(--accent)',
+            borderColor: '#C7D2FE'
+          }}
+          title="Ver y ajustar el Reloj de Simulación del escenario (UTC)"
+        >
+          <Clock size={12} style={{ color: 'var(--accent)' }} />
+          <span>{simulationClock ? simulationClock.replace('2026-', '').replace('Z', ' UTC') : '12:00 UTC'}</span>
+        </button>
 
         {/* Botón de Sincronización / Refrescar */}
         <button

@@ -29,6 +29,12 @@ from src.features.deshacer_accion.command import DeshacerAccionCommand, Deshacer
 from src.features.archivar_rama.dto import ArchivarRamaDTO
 from src.features.archivar_rama.command import ArchivarRamaCommand, ArchivarRamaHandler
 
+from src.features.gestion_reloj.dto import FijarRelojDTO, AvanzarRelojDTO, RelojRespuestaDTO
+from src.features.gestion_reloj.command import (
+    FijarRelojCommand, FijarRelojHandler,
+    AvanzarRelojCommand, AvanzarRelojHandler
+)
+
 from src.infrastructure.persistence.in_memory_store import store
 from src.infrastructure.audit.avl_auditor import AVLAuditor
 from src.infrastructure.persistence.json_repository import JSONRepository
@@ -67,6 +73,8 @@ global_command_bus.register(CorregirEventoCommand, CorregirEventoHandler().handl
 global_command_bus.register(ProcesarReporteCommand, ProcesarReporteHandler().handle)
 global_command_bus.register(DeshacerAccionCommand, DeshacerAccionHandler().handle)
 global_command_bus.register(ArchivarRamaCommand, ArchivarRamaHandler().handle)
+global_command_bus.register(FijarRelojCommand, FijarRelojHandler().handle)
+global_command_bus.register(AvanzarRelojCommand, AvanzarRelojHandler().handle)
 
 
 # --------------------------------------------------
@@ -162,14 +170,51 @@ def limpiar_arbol_total(cargar_muestras: bool = False):
     }
 
 
+# --------------------------------------------------
+# ENDPOINTS RELOJ DE SIMULACIÓN / SIMULATION CLOCK
+# --------------------------------------------------
+
+@app.get("/api/v1/escenario/reloj", tags=["Escenario & Reloj"])
+def obtener_reloj_simulacion():
+    """Retorna el reloj de simulación explícito del escenario en formato UTC ISO 8601"""
+    clock_dt = store.get_simulation_clock()
+    return {
+        "success": True,
+        "reloj": store.get_simulation_clock_iso(),
+        "timestamp_epoch": int(clock_dt.timestamp())
+    }
+
+
+@app.put("/api/v1/escenario/reloj", tags=["Escenario & Reloj"])
+def fijar_reloj_simulacion(dto: FijarRelojDTO):
+    """Fija manualmente la fecha y hora del reloj de simulación en UTC ISO 8601"""
+    try:
+        command = FijarRelojCommand(dto)
+        return global_command_bus.dispatch(command)
+    except SismoLabException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": e.code, "message": e.message})
+
+
+@app.post("/api/v1/escenario/reloj/avanzar", tags=["Escenario & Reloj"])
+def avanzar_reloj_simulacion(dto: AvanzarRelojDTO):
+    """Avanza manualmente el reloj de simulación por minutos, horas o días"""
+    try:
+        command = AvanzarRelojCommand(dto)
+        return global_command_bus.dispatch(command)
+    except SismoLabException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": e.code, "message": e.message})
+
+
 @app.get("/api/v1/sistema/estado-completo", tags=["Queries"])
 def obtener_estado_completo_sistema():
-    """Retorna en una sola petición HTTP atómica: métricas de auditoría, lista de eventos ordenados, árbol AVL jerárquico y árbol BST jerárquico"""
+    """Retorna en una sola petición HTTP atómica: reloj de simulación, métricas de auditoría, lista de eventos ordenados con antigüedad, árbol AVL jerárquico y árbol BST jerárquico"""
+    current_clock = store.get_simulation_clock()
     eventos = store.avl_tree.recorrido_inorden()
     return {
         "success": True,
+        "reloj_simulacion": store.get_simulation_clock_iso(),
         "metricas": AVLAuditor.get_metrics(),
-        "eventos": [e.to_dict() for e in eventos],
+        "eventos": [e.to_dict(current_clock=current_clock) for e in eventos],
         "avl_tree": store.avl_tree.to_dict_jerarquico(),
         "bst_tree": store.bst_tree.to_dict_jerarquico(),
         "cola_size": store.report_queue.size()

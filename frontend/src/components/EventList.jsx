@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit3, MapPin } from 'lucide-react';
+import { Search, Edit3, MapPin, Clock } from 'lucide-react';
 
 export default function EventList({ events = [], onEditEvent }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,6 +92,14 @@ export default function EventList({ events = [], onEditEvent }) {
                     <span>{ev.profundidad} km</span>
                     <span>•</span>
                     <span>{ev.zona_poblada ? 'Urbana' : 'Rural'}</span>
+                    {ev.antiguedad_humana && (
+                      <>
+                        <span>•</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: 'var(--accent)', fontWeight: 600 }}>
+                          <Clock size={10} /> {ev.antiguedad_humana}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 

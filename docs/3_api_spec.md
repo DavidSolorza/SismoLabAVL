@@ -293,8 +293,90 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   "eventos": [ ... ],
   "avl_tree": { ... },
   "bst_tree": { ... },
-  "cola_size": 0
+  "cola_size": 0,
+  "reloj_simulacion": "2026-09-22T12:00:00Z"
 }
 ```
+
+---
+
+#### 2.11. Slice: Consultar Reloj de Simulación (`GET /api/v1/escenario/reloj`)
+**Descripción:** Retorna el reloj de simulación actual del escenario en formato estándar UTC (ISO 8601 con precisión de segundos). A partir de este reloj y del timestamp de cada evento, se determina su antigüedad relativa.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Reloj actual obtenido exitosamente.
+```json
+{
+  "success": true,
+  "reloj_simulacion": "2026-09-22T12:00:00Z",
+  "message": "Reloj de simulación actual obtenido correctamente."
+}
+```
+
+---
+
+#### 2.12. Slice: Fijar Reloj de Simulación (`PUT /api/v1/escenario/reloj`)
+**Comando:** `FijarRelojCommand`  
+**Descripción:** Permite al operador establecer manualmente el reloj de simulación del escenario en una fecha y hora UTC específica. El timestamp debe cumplir con el estándar ISO 8601.
+
+##### Request Payload (JSON):
+```json
+{
+  "reloj_iso": "2026-09-22T15:30:00Z"
+}
+```
+
+##### Respuestas / Responses:
+- **`200 OK`**: Reloj fijado correctamente.
+```json
+{
+  "success": true,
+  "reloj_simulacion": "2026-09-22T15:30:00Z",
+  "message": "Reloj de simulación fijado en 2026-09-22T15:30:00Z"
+}
+```
+- **`400 Bad Request`**: Formato de fecha y hora ISO 8601 inválido.
+```json
+{
+  "success": false,
+  "error_code": "FORMATO_RELOJ_INVALIDO",
+  "message": "El timestamp 'fecha-invalida' no cumple con el formato estándar ISO 8601 UTC."
+}
+```
+
+---
+
+#### 2.13. Slice: Avanzar Reloj de Simulación (`POST /api/v1/escenario/reloj/avanzar`)
+**Comando:** `AvanzarRelojCommand`  
+**Descripción:** Adelanta el reloj de simulación del escenario sumando un intervalo delta en minutos, horas, días o segundos. Al avanzar el reloj, se recalcula reactivamente la antigüedad de todos los eventos registrados en el sistema.
+
+##### Request Payload (JSON):
+```json
+{
+  "minutes": 60,
+  "hours": 0,
+  "days": 0,
+  "seconds": 0
+}
+```
+
+##### Respuestas / Responses:
+- **`200 OK`**: Reloj adelantado con éxito.
+```json
+{
+  "success": true,
+  "reloj_simulacion": "2026-09-22T16:30:00Z",
+  "message": "Reloj de simulación avanzado a 2026-09-22T16:30:00Z"
+}
+```
+- **`400 Bad Request`**: El delta especificado no es estrictamente positivo.
+```json
+{
+  "success": false,
+  "error_code": "DELTA_RELOJ_INVALIDO",
+  "message": "El delta para avanzar el reloj debe ser estrictamente positivo."
+}
+```
+
 
 

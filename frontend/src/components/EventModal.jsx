@@ -9,6 +9,7 @@ export default function EventModal({
   onSubmit,
   editEvent,
   events = [],
+  simulationClock,
   position = 'top-right',
   maxHeight = 'calc(100vh - 156px)'
 }) {
@@ -21,6 +22,18 @@ export default function EventModal({
   const [zonaPoblada, setZonaPoblada] = useState(true);
   const [razon, setRazon] = useState('Recalibración técnica de sensor');
   const [selectedPresetId, setSelectedPresetId] = useState('');
+
+  const formatUtcToLocalInput = (isoStr) => {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+    } catch {
+      return '';
+    }
+  };
+
+  const [timestamp, setTimestamp] = useState(() => formatUtcToLocalInput(simulationClock || new Date().toISOString()));
 
   // Inicialización de estado según creación o edición
   useEffect(() => {
@@ -40,8 +53,11 @@ export default function EventModal({
       setMagnitud(5.5);
       setProfundidad(15.0);
       setSelectedPresetId('');
+      if (simulationClock) {
+        setTimestamp(formatUtcToLocalInput(simulationClock));
+      }
     }
-  }, [editEvent, isOpen]);
+  }, [editEvent, isOpen, simulationClock]);
 
   const handlePresetSelect = (presetId) => {
     setSelectedPresetId(presetId);
@@ -70,6 +86,7 @@ export default function EventModal({
   const isMagValid = !isNaN(magNum) && magNum >= -2.0 && magNum <= 10.0;
   const isDepthValid = !isNaN(depthNum) && depthNum >= 0.0 && depthNum <= 700.0;
   const isIdValid = !isNaN(idNum) && idNum >= 1 && idNum <= 999999;
+  const isTimestampValid = !timestamp || !simulationClock || (new Date(timestamp).getTime() <= new Date(simulationClock).getTime());
 
   // Estimación visual en tiempo real de la Prioridad P resultante
   const calcularPrioridadEstimada = () => {
@@ -87,7 +104,7 @@ export default function EventModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isMagValid || !isDepthValid || (!editEvent && !isIdValid)) {
+    if (!isMagValid || !isDepthValid || (!editEvent && (!isIdValid || !isTimestampValid))) {
       return;
     }
 
@@ -100,6 +117,15 @@ export default function EventModal({
         razon: razon
       });
     } else {
+      let isoTimestamp = undefined;
+      if (timestamp) {
+        try {
+          isoTimestamp = new Date(timestamp).toISOString();
+        } catch {
+          isoTimestamp = undefined;
+        }
+      }
+
       onSubmit({
         isCorrection: false,
         id: idNum,
@@ -108,7 +134,8 @@ export default function EventModal({
         latitud: parseFloat(latitud),
         longitud: parseFloat(longitud),
         estacion_id: estacionId,
-        zona_poblada: zonaPoblada
+        zona_poblada: zonaPoblada,
+        timestamp: isoTimestamp
       });
     }
   };
@@ -292,6 +319,31 @@ export default function EventModal({
                 Epicentro Urbano (Eleva Prioridad P)
               </label>
             </div>
+
+            {/* Fecha y Hora del Evento (UTC / <= Reloj de Simulación) */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Ocurrencia UTC (≤ Reloj Simulación)
+                </label>
+                <span style={{ fontSize: '0.66rem', color: isTimestampValid ? 'var(--text-muted)' : 'var(--coral-soft)', fontWeight: 600 }}>
+                  {isTimestampValid ? 'Válido' : 'No puede ser futuro'}
+                </span>
+              </div>
+              <input
+                type="datetime-local"
+                step="1"
+                value={timestamp}
+                max={formatUtcToLocalInput(simulationClock)}
+                onChange={(e) => setTimestamp(e.target.value)}
+                required
+                style={{
+                  width: '100%', padding: '6px 8px', borderRadius: '6px',
+                  border: `1px solid ${isTimestampValid ? 'var(--border-hover)' : 'var(--coral-soft)'}`,
+                  fontSize: '0.78rem', backgroundColor: '#F8FAFC', color: 'var(--text-primary)', outline: 'none'
+                }}
+              />
+            </div>
           </>
         )}
 
@@ -314,7 +366,7 @@ export default function EventModal({
           <button
             type="submit"
             className="btn-primary"
-            disabled={!isMagValid || !isDepthValid || (!editEvent && !isIdValid)}
+            disabled={!isMagValid || !isDepthValid || (!editEvent && (!isIdValid || !isTimestampValid))}
             style={{ padding: '6px 14px', fontSize: '0.78rem', fontWeight: 700 }}
           >
             {editEvent ? 'Corregir Nodo' : 'Insertar en Árbol'}
