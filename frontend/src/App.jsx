@@ -38,8 +38,8 @@ export default function App() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);     // Cola FIFO de Telemetría
   const [isPresetsOpen, setIsPresetsOpen] = useState(false); // Catálogo Rápido de Sismos
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
+  const showToast = (message, type = 'success', options = {}) => {
+    setToast({ message, type, ...options });
   };
 
   // Carga atómica y optimizada del estado completo en una sola llamada HTTP
@@ -65,7 +65,9 @@ export default function App() {
         setTreeData(tree);
         setBstData(bst);
       } catch (fallbackErr) {
-        showToast(fallbackErr.message || 'Error al conectar con el backend SismoLab', 'error');
+        showToast(fallbackErr.message || 'Error al conectar con el backend SismoLab', 'error', {
+          title: 'Error de Comunicación'
+        });
       }
     } finally {
       setLoading(false);
@@ -81,10 +83,22 @@ export default function App() {
     try {
       const newMode = metrics?.modo_operacional === 'NORMAL' ? 'STRESS' : 'NORMAL';
       const res = await setOperationalMode(newMode);
-      showToast(res.message || `Modo operacional cambiado a ${newMode}`);
+      if (newMode === 'STRESS') {
+        showToast(
+          'El modo STRESS suspende temporalmente las rotaciones en inserción para pruebas de estrés bajo alta carga.',
+          'warning',
+          { title: 'Modo STRESS Activado' }
+        );
+      } else {
+        showToast(
+          'El modo NORMAL asegura auto-balanceo logarítmico O(log n) continuo con rotaciones automáticas en cada inserción.',
+          'success',
+          { title: 'Modo NORMAL Reanudado' }
+        );
+      }
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'error', { title: 'Fallo al Cambiar Modo' });
     }
   };
 
@@ -93,16 +107,16 @@ export default function App() {
     try {
       if (formData.isCorrection) {
         const res = await correctEvent(formData.eventId, formData.nuevaMagnitud, formData.nuevaProfundidad, formData.razon);
-        showToast(res.message);
+        showToast(res.message, 'success', { title: 'Corrección Aplicada' });
       } else {
         const res = await createEvent(formData);
-        showToast(res.message);
+        showToast(res.message, 'success', { title: 'Sismo Registrado' });
       }
       setIsModalOpen(false);
       setEditEvent(null);
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'error', { title: 'Error de Transacción' });
     }
   };
 
@@ -110,7 +124,7 @@ export default function App() {
   const handleQuickInsertPredefined = async (preset) => {
     try {
       const targetId = getAvailableId(events, preset.id);
-      const payload = {
+      const res = await createEvent({
         id: targetId,
         magnitud: preset.magnitud,
         profundidad: preset.profundidad,
@@ -118,12 +132,11 @@ export default function App() {
         longitud: preset.longitud,
         estacion_id: preset.estacion_id,
         zona_poblada: preset.zona_poblada
-      };
-      const res = await createEvent(payload);
-      showToast(res.message || `Sismo SIS-${targetId} (${preset.nombre}) insertado en el AVL`);
+      });
+      showToast(res.message, 'success', { title: `${preset.nombre} Insertado` });
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'error', { title: 'Error al Insertar Plantilla' });
     }
   };
 
@@ -131,10 +144,12 @@ export default function App() {
   const handleUndo = async () => {
     try {
       const res = await undoLastAction();
-      showToast(res.message);
+      showToast(res.message || 'Última mutación revertida', 'success', { title: 'Deshacer (Pila LIFO)' });
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'No hay operaciones previas en la Pila LIFO para deshacer.', 'warning', {
+        title: 'Pila LIFO Vacía'
+      });
     }
   };
 
@@ -158,9 +173,11 @@ export default function App() {
 
       const res = await enqueueReport(newReport);
       setQueueItems(prev => [...prev, newReport]);
-      showToast(res.message || `Reporte SIS-${sampleId} encolado en FIFO`);
+      showToast(res.message || `Reporte SIS-${sampleId} encolado en FIFO`, 'success', {
+        title: 'Reporte Telemétrico Encolado'
+      });
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'error', { title: 'Error de Encolamiento' });
     }
   };
 
@@ -169,10 +186,10 @@ export default function App() {
     try {
       const res = await processNextReport();
       setQueueItems(prev => prev.slice(1));
-      showToast(res.message);
+      showToast(res.message, 'success', { title: 'Paso FIFO Procesado' });
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'warning', { title: 'Cola Vacía' });
     }
   };
 
@@ -190,36 +207,58 @@ export default function App() {
         }
       }
       setQueueItems([]);
-      showToast(lastMessage);
+      showToast(lastMessage, 'success', { title: 'Ráfaga FIFO Completada' });
       loadData();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message, 'error', { title: 'Fallo al Procesar Ráfaga' });
     }
   };
 
   // Archivar rama elegible de baja prioridad
-  const handleArchiveBranch = async () => {
-    try {
-      const res = await archiveBranch(3);
-      showToast(res.message);
-      loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  const handleArchiveBranch = () => {
+    showToast(
+      '¿Desea buscar y podar la sub-rama elegible de menor prioridad (P3) para compactar y balancear el árbol AVL?',
+      'confirm',
+      {
+        title: '¿Archivar Rama de Baja Prioridad (P3)?',
+        confirmText: 'Podar y Archivar P3',
+        cancelText: 'Cancelar',
+        onConfirm: async () => {
+          try {
+            const res = await archiveBranch(3);
+            showToast(res.message, 'success', { title: 'Rama P3 Archivada' });
+            loadData();
+          } catch (err) {
+            showToast(err.message, 'warning', { title: 'Poda no Realizada' });
+          }
+        }
+      }
+    );
   };
 
   // Limpiar y reiniciar totalmente el árbol AVL
-  const handleClearTree = async () => {
-    if (window.confirm('¿Está seguro de que desea vaciar totalmente el árbol AVL y reiniciar las pruebas con 0 nodos?')) {
-      try {
-        const res = await clearAllTree(false);
-        setQueueItems([]);
-        showToast(res.message || 'Árbol AVL vaciado exitosamente (0 nodos)');
-        loadData();
-      } catch (err) {
-        showToast(err.message, 'error');
+  const handleClearTree = () => {
+    showToast(
+      '¿Está seguro de que desea vaciar totalmente los árboles AVL y BST? Esta acción eliminará todos los nodos registrados en memoria principal para comenzar pruebas limpias.',
+      'confirm',
+      {
+        title: '¿Vaciar Totalmente el Árbol?',
+        confirmText: 'Sí, Vaciar Todo',
+        cancelText: 'Cancelar',
+        onConfirm: async () => {
+          try {
+            const res = await clearAllTree(false);
+            setQueueItems([]);
+            showToast(res.message || 'Árbol vaciado exitosamente (0 nodos)', 'success', {
+              title: 'Árboles Reiniciados'
+            });
+            loadData();
+          } catch (err) {
+            showToast(err.message, 'error', { title: 'Error al Vaciar' });
+          }
+        }
       }
-    }
+    );
   };
 
   // -------------------------------------------------------------------------
