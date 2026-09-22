@@ -27,6 +27,7 @@ from src.features.archivar_rama.command import ArchivarRamaDTO, ArchivarRamaComm
 from src.infrastructure.persistence.in_memory_store import store
 from src.infrastructure.audit.avl_auditor import AVLAuditor
 from src.domain.entities.report import SeismicReport
+from src.domain.constants.predefined_events import PREDEFINED_EVENTS
 
 def init_handlers():
     global_command_bus.register(CrearEventoCommand, CrearEventoHandler().handle)
@@ -43,15 +44,51 @@ def dibujar_arbol_conceptual(nodo, espacio="", posicion="R"):
     if nodo is not None:
         dibujar_arbol_conceptual(nodo.getHijoDerecho(), espacio + "     ", "D")
         evento = nodo.getValor()
-        str_val = f"{evento.composite_key.formatted_id()} (P={evento.priority}, M={evento.magnitude})" if hasattr(evento, 'composite_key') else str(evento)
+        str_val = f"{evento.composite_key.formatted_id()} (M={evento.magnitude}M, P={evento.priority})" if hasattr(evento, 'composite_key') else str(evento)
         print(f"{espacio}{posicion}── {str_val}")
         dibujar_arbol_conceptual(nodo.getHijoIzquierdo(), espacio + "     ", "I")
+
+def seleccionar_sismo_predefinido():
+    """Permite seleccionar interactivamente un sismo predefinido del catálogo colombiano"""
+    print("\n" + "-"*65)
+    print("⚡ CATÁLOGO DE SISMOS PREDEFINIDOS PARA PRUEBAS RÁPIDAS ⚡")
+    print("-"*65)
+    for i, s in enumerate(PREDEFINED_EVENTS, 1):
+        zona = "Urbana" if s["zona_poblada"] else "Rural"
+        print(f" {i:2d}. {s['nombre']}")
+        print(f"     Magnitud: {s['magnitud']}M | Prof: {s['profundidad']}km | {zona} | P{s['expected_priority']}")
+    print("  0. Cancelar selección")
+    print("-"*65)
+    
+    sel = input(f"Seleccione un sismo (1-{len(PREDEFINED_EVENTS)}, 0=Cancelar): ").strip()
+    if not sel.isdigit() or int(sel) < 1 or int(sel) > len(PREDEFINED_EVENTS):
+        return None, None
+    
+    preset = PREDEFINED_EVENTS[int(sel) - 1]
+    
+    # Resolver ID para evitar colisiones con eventos existentes
+    existing_events = store.avl_tree.recorrido_inorden()
+    existing_ids = {e.id for e in existing_events}
+    target_id = preset["id"]
+    if target_id in existing_ids:
+        target_id = max(existing_ids) + 1 if existing_ids else 2001
+    
+    dto = CrearEventoDTO(
+        id=target_id,
+        magnitud=preset["magnitud"],
+        profundidad=preset["profundidad"],
+        latitud=preset["latitud"],
+        longitud=preset["longitud"],
+        estacion_id=preset["estacion_id"],
+        zona_poblada=preset["zona_poblada"]
+    )
+    return dto, preset["nombre"]
 
 def menu_principal():
     print("\n" + "="*70)
     print("🌋 SISTEMA BACKEND SISMOLAB AVL - UNIVERSIDAD DE CALDAS 🌋")
     print("="*70)
-    print(" 1. ➕ Crear Evento Sísmico (Slice: crear_evento)")
+    print(" 1. ➕ Crear Evento Sísmico (Manual o Catálogo Rápido)")
     print(" 2. ✏️ Corregir Evento Sísmico (Slice: corregir_evento)")
     print(" 3. 📥 Encolar Reporte de Telemetría (Cola FIFO)")
     print(" 4. ⚙️ Procesar Siguiente Reporte de Cola (Slice: procesar_reporte)")
@@ -61,6 +98,8 @@ def menu_principal():
     print(" 8. 🌳 Dibujar Estructura Conceptual del Árbol AVL")
     print(" 9. 📊 Ver Auditoría y Métricas (AVL vs BST)")
     print("10. 🔄 Alternar Modo Operacional (NORMAL <-> ESTRÉS)")
+    print("11. ⚡ Insertar Sismo Predefinido (Catálogo Rápido)")
+    print("12. 🧹 Limpiar Árbol Totalmente (Vaciar todo para pruebas)")
     print(" 0. 🚪 Salir / Exit")
     print("="*70)
 
@@ -68,23 +107,43 @@ def main_cli():
     init_handlers()
     while True:
         menu_principal()
-        opc = input("Seleccione una opción / Select an option (0-10): ").strip()
+        opc = input("Seleccione una opción / Select an option (0-12): ").strip()
         
         if opc == "1":
             try:
-                ev_id = int(input("ID del evento (1..999999): "))
-                mag = float(input("Magnitud (-2.0..10.0): "))
-                prof = float(input("Profundidad (km >= 0): "))
-                lat = float(input("Latitud (-90..90): "))
-                lon = float(input("Longitud (-180..180): "))
-                poblada = input("¿Afecta zona poblada? (s/n): ").strip().lower() == 's'
-                
-                dto = CrearEventoDTO(
-                    id=ev_id, magnitud=mag, profundidad=prof,
-                    latitud=lat, longitud=lon, zona_poblada=poblada
-                )
-                res = global_command_bus.dispatch(CrearEventoCommand(dto))
-                print("\n✅ OK:", res["message"])
+                usar_predef = input("¿Desea usar un sismo predefinido del catálogo? (s/n, default=s): ").strip().lower()
+                if usar_predef in ("", "s", "si", "y", "yes"):
+                    dto, nombre = seleccionar_sismo_predefinido()
+                    if dto:
+                        res = global_command_bus.dispatch(CrearEventoCommand(dto))
+                        print(f"\n✅ OK: Insertado [{nombre}] (ID: {dto.id}) - {res['message']}")
+                    else:
+                        print("\nℹ️ Inserción cancelada.")
+                else:
+                    ev_id = int(input("ID del evento (1..999999): "))
+                    mag = float(input("Magnitud (-2.0..10.0): "))
+                    prof = float(input("Profundidad (km >= 0): "))
+                    lat = float(input("Latitud (-90..90): "))
+                    lon = float(input("Longitud (-180..180): "))
+                    poblada = input("¿Afecta zona poblada? (s/n): ").strip().lower() == 's'
+                    
+                    dto = CrearEventoDTO(
+                        id=ev_id, magnitud=mag, profundidad=prof,
+                        latitud=lat, longitud=lon, zona_poblada=poblada
+                    )
+                    res = global_command_bus.dispatch(CrearEventoCommand(dto))
+                    print("\n✅ OK:", res["message"])
+            except Exception as e:
+                print("\n❌ Error:", str(e))
+
+        elif opc == "11":
+            try:
+                dto, nombre = seleccionar_sismo_predefinido()
+                if dto:
+                    res = global_command_bus.dispatch(CrearEventoCommand(dto))
+                    print(f"\n✅ OK: Insertado [{nombre}] (ID: {dto.id}) - {res['message']}")
+                else:
+                    print("\nℹ️ Inserción cancelada.")
             except Exception as e:
                 print("\n❌ Error:", str(e))
 
@@ -168,6 +227,14 @@ def main_cli():
             nuevo_modo = OperationalMode.STRESS if modo_act == OperationalMode.NORMAL else OperationalMode.NORMAL
             store.avl_tree.set_modo(nuevo_modo)
             print(f"\n✅ Modo cambiado de {modo_act.value} a {nuevo_modo.value}")
+
+        elif opc == "12":
+            conf = input("¿Está seguro de vaciar totalmente el árbol AVL y la memoria? (s/n): ").strip().lower()
+            if conf in ("s", "si", "y", "yes"):
+                store.clear_all(load_samples=False)
+                print("\n🧹 OK: Árbol AVL, BST, cola FIFO y pila LIFO vaciados totalmente (0 nodos).")
+            else:
+                print("\nℹ️ Limpieza cancelada.")
 
         elif opc == "0":
             print("\n¡Gracias por utilizar SismoLab AVL!")

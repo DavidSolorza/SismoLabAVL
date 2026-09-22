@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import MetricsBanner from './components/MetricsBanner';
-import AVLVisualizer from './components/AVLVisualizer';
 import QuickActions from './components/QuickActions';
+import QueueViewer from './components/QueueViewer';
+import AVLVisualizer from './components/AVLVisualizer';
 import EventList from './components/EventList';
 import EventModal from './components/EventModal';
 import Toast from './components/Toast';
 
 import {
   fetchMetrics, fetchEvents, fetchTreeHierarchy, createEvent, correctEvent,
-  enqueueReport, processNextReport, undoLastAction, archiveBranch, setOperationalMode
+  enqueueReport, processNextReport, undoLastAction, archiveBranch, setOperationalMode,
+  clearAllTree
 } from './services/apiService';
+import { PREDEFINED_EVENTS, getAvailableId } from './data/predefinedEvents';
 
 export default function App() {
   const [metrics, setMetrics] = useState(null);
@@ -18,6 +21,9 @@ export default function App() {
   const [treeData, setTreeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Estado de la Cola FIFO en UI
+  const [queueItems, setQueueItems] = useState([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,19 +55,19 @@ export default function App() {
     loadData();
   }, [loadData]);
 
-  // Mode Toggle (NORMAL <-> STRESS)
+  // Conmutador de Modo Operacional (NORMAL <-> STRESS)
   const handleToggleMode = async () => {
     try {
       const newMode = metrics?.modo_operacional === 'NORMAL' ? 'STRESS' : 'NORMAL';
-      await setOperationalMode(newMode);
-      showToast(`Modo operacional cambiado a ${newMode}`);
+      const res = await setOperationalMode(newMode);
+      showToast(res.message || `Modo operacional cambiado a ${newMode}`);
       loadData();
     } catch (err) {
       showToast(err.message, 'error');
     }
   };
 
-  // Submit Handler for Create & Correct
+  // Enviar formulario de Creación / Corrección
   const handleModalSubmit = async (formData) => {
     try {
       if (formData.isCorrection) {
@@ -79,7 +85,28 @@ export default function App() {
     }
   };
 
-  // Quick Action Handlers
+  // Inserción directa de sismo predefinido (1 Clic)
+  const handleQuickInsertPredefined = async (preset) => {
+    try {
+      const targetId = getAvailableId(events, preset.id);
+      const payload = {
+        id: targetId,
+        magnitud: preset.magnitud,
+        profundidad: preset.profundidad,
+        latitud: preset.latitud,
+        longitud: preset.longitud,
+        estacion_id: preset.estacion_id,
+        zona_poblada: preset.zona_poblada
+      };
+      const res = await createEvent(payload);
+      showToast(res.message || `Sismo SIS-${targetId} (${preset.nombre}) insertado en el AVL`);
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Deshacer Operación (Undo LIFO Stack)
   const handleUndo = async () => {
     try {
       const res = await undoLastAction();
@@ -90,9 +117,37 @@ export default function App() {
     }
   };
 
+  // Encolar reporte telemétrico sintético
+  const handleEnqueueSample = async () => {
+    try {
+      const sampleId = Math.floor(2000 + Math.random() * 7999);
+      const sampleMag = parseFloat((3.0 + Math.random() * 4.2).toFixed(1));
+      const sampleDepth = parseFloat((5.0 + Math.random() * 45.0).toFixed(1));
+      const station = ['EST-MANIZALES-01', 'EST-PEREIRA-01', 'EST-ARMENIA-01'][Math.floor(Math.random() * 3)];
+      
+      const newReport = {
+        station_code: station,
+        event_id: sampleId,
+        magnitud: sampleMag,
+        profundidad: sampleDepth,
+        latitud: 5.06889,
+        longitud: -75.51738,
+        zona_poblada: Math.random() > 0.5
+      };
+
+      const res = await enqueueReport(newReport);
+      setQueueItems(prev => [...prev, newReport]);
+      showToast(res.message || `Reporte SIS-${sampleId} encolado en FIFO`);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Procesar siguiente reporte paso a paso
   const handleProcessQueue = async () => {
     try {
       const res = await processNextReport();
+      setQueueItems(prev => prev.slice(1));
       showToast(res.message);
       loadData();
     } catch (err) {
@@ -100,6 +155,30 @@ export default function App() {
     }
   };
 
+  // Procesar ráfaga completa
+  const handleProcessBatch = async () => {
+    try {
+      // Procesar secuencialmente los reportes encolados
+      const itemsToProcess = queueItems.length > 0 ? queueItems.length : 1;
+      let lastMessage = 'Cola FIFO procesada';
+      for (let i = 0; i < itemsToProcess; i++) {
+        try {
+          const res = await processNextReport();
+          lastMessage = res.message;
+        } catch (e) {
+          // Si la cola en el servidor ya está vacía, detenerse
+          break;
+        }
+      }
+      setQueueItems([]);
+      showToast(lastMessage);
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Archivar rama elegible de baja prioridad
   const handleArchiveBranch = async () => {
     try {
       const res = await archiveBranch(3);
@@ -110,30 +189,24 @@ export default function App() {
     }
   };
 
-  const handleEnqueueSample = async () => {
-    try {
-      const sampleId = Math.floor(2000 + Math.random() * 8000);
-      const sampleMag = (3.5 + Math.random() * 4.0).toFixed(1);
-      const sampleDepth = (5.0 + Math.random() * 40.0).toFixed(1);
-      const res = await enqueueReport({
-        station_code: 'EST-MANIZALES-01',
-        event_id: sampleId,
-        magnitud: parseFloat(sampleMag),
-        profundidad: parseFloat(sampleDepth),
-        latitud: 5.06889,
-        longitud: -75.51738,
-        zona_poblada: true
-      });
-      showToast(res.message);
-    } catch (err) {
-      showToast(err.message, 'error');
+  // Limpiar y reiniciar totalmente el árbol AVL
+  const handleClearTree = async () => {
+    if (window.confirm('¿Está seguro de que desea vaciar totalmente el árbol AVL y reiniciar las pruebas con 0 nodos?')) {
+      try {
+        const res = await clearAllTree(false);
+        setQueueItems([]);
+        showToast(res.message || 'Árbol AVL vaciado exitosamente (0 nodos)');
+        loadData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }
   };
 
   return (
-    <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '24px 16px 40px 16px' }}>
+    <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '20px 16px 40px 16px' }}>
       
-      {/* Header Bar */}
+      {/* Header Superior con Switch de Modo */}
       <Header
         currentMode={metrics?.modo_operacional || 'NORMAL'}
         onToggleMode={handleToggleMode}
@@ -141,19 +214,30 @@ export default function App() {
         loading={loading}
       />
 
-      {/* Metrics Banner */}
+      {/* Tarjetas de Métricas y Comparativa AVL vs BST */}
       <MetricsBanner metrics={metrics} />
 
-      {/* Quick Action Toolbar */}
+      {/* Barra de Acciones Rápidas */}
       <QuickActions
         onOpenCreateModal={() => { setEditEvent(null); setIsModalOpen(true); }}
         onUndo={handleUndo}
         onProcessQueue={handleProcessQueue}
         onArchiveBranch={handleArchiveBranch}
         onEnqueueSample={handleEnqueueSample}
+        onQuickInsertPredefined={handleQuickInsertPredefined}
+        onClearTree={handleClearTree}
       />
 
-      {/* Interactive Hierarchical AVL Tree Visualizer */}
+      {/* Visualizador de la Cola FIFO de Telemetría */}
+      <QueueViewer
+        queueItems={queueItems}
+        onEnqueueSample={handleEnqueueSample}
+        onProcessNext={handleProcessQueue}
+        onProcessBatch={handleProcessBatch}
+        loading={loading}
+      />
+
+      {/* Visualizador Jerárquico del Árbol AVL */}
       <AVLVisualizer
         treeData={treeData}
         onSelectEvent={(ev) => {
@@ -162,7 +246,7 @@ export default function App() {
         }}
       />
 
-      {/* Seismic Events Table */}
+      {/* Tabla del Catálogo de Eventos Sísmicos */}
       <EventList
         events={events}
         onEditEvent={(ev) => {
@@ -171,15 +255,16 @@ export default function App() {
         }}
       />
 
-      {/* Modal Dialog */}
+      {/* Modal Dialog de Creación y Corrección */}
       <EventModal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditEvent(null); }}
         onSubmit={handleModalSubmit}
         editEvent={editEvent}
+        events={events}
       />
 
-      {/* Toast Notification */}
+      {/* Notificaciones Flotantes Toast */}
       <Toast toast={toast} onClose={() => setToast(null)} />
 
     </div>

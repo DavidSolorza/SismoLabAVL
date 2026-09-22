@@ -33,6 +33,13 @@ export async function fetchEvents() {
   return json.eventos || [];
 }
 
+export async function fetchPredefinedEvents() {
+  const res = await fetch(`${API_BASE}/eventos/predefinidos`);
+  if (!res.ok) throw new Error('Error al cargar el catálogo de sismos predefinidos');
+  const json = await res.json();
+  return json.predefinidos || [];
+}
+
 export async function fetchTreeHierarchy() {
   const res = await fetch(`${API_BASE}/avl/arbol-jerarquico`);
   if (!res.ok) throw new Error('Error al cargar la jerarquía del árbol AVL');
@@ -111,5 +118,14 @@ export async function setOperationalMode(mode) {
   const res = await fetch(`${API_BASE}/avl/modo?modo=${mode}`, { method: 'POST' });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al cambiar modo operacional'));
+  return data;
+}
+
+export async function clearAllTree(cargarMuestras = false) {
+  const res = await fetch(`${API_BASE}/sistema/limpiar?cargar_muestras=${cargarMuestras}`, {
+    method: 'POST'
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al limpiar el árbol'));
   return data;
 }

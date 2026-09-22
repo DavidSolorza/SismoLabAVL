@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Edit3, MapPin, AlertCircle } from 'lucide-react';
+import { Search, Database } from 'lucide-react';
+import EventRow from './EventRow';
 
 export default function EventList({ events, onEditEvent }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,101 +12,93 @@ export default function EventList({ events, onEditEvent }) {
   );
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
-      {/* Search Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="glass-panel" style={{ padding: '22px 24px', marginBottom: '20px', backgroundColor: '#FFFFFF' }}>
+      
+      {/* Encabezado y Barra de Búsqueda */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Registro de Eventos Sísmicos</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Recorrido Inorden extraído directamente del Árbol AVL en memoria.
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={20} style={{ color: 'var(--accent)' }} />
+            <span>Catálogo Activo de Eventos Sísmicos</span>
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Recorrido In-Order extraído en tiempo real desde el Árbol AVL en memoria principal.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div style={{
-          position: 'relative', width: '280px'
-        }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        {/* Campo de Búsqueda Filtrada */}
+        <div style={{ position: 'relative', width: '270px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="Buscar por ID o estación..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              width: '100%', padding: '9px 12px 9px 38px',
-              background: 'rgba(20, 17, 15, 0.8)', border: '1px solid var(--border-warm)',
-              borderRadius: '10px', color: 'var(--text-bright)', fontSize: '0.88rem',
-              outline: 'none'
+              width: '100%',
+              padding: '8px 12px 8px 36px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid var(--border-hover)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--text-primary)',
+              fontSize: '0.85rem',
+              outline: 'none',
+              transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = 'var(--accent)';
+              e.target.style.boxShadow = '0 0 0 3px var(--accent-light)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'var(--border-hover)';
+              e.target.style.boxShadow = 'none';
             }}
           />
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabla Estilizada con Diseño Claro y Pasteles */}
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-warm)', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-              <th style={{ padding: '12px' }}>Clave $K$ (P, M, I)</th>
-              <th style={{ padding: '12px' }}>Prioridad P</th>
-              <th style={{ padding: '12px' }}>Magnitud M</th>
-              <th style={{ padding: '12px' }}>Profundidad D</th>
-              <th style={{ padding: '12px' }}>Estación</th>
-              <th style={{ padding: '12px' }}>Área Poblada</th>
-              <th style={{ padding: '12px', textAlign: 'right' }}>Acciones</th>
+            <tr style={{
+              backgroundColor: '#F8FAFC',
+              borderBottom: '1px solid var(--border-subtle)',
+              color: 'var(--text-secondary)',
+              fontSize: '0.76rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Clave $K$ (M, P, I)</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Prioridad P</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Magnitud M</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Profundidad</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Estación</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700 }}>Zona Poblada</th>
+              <th style={{ padding: '12px 14px', fontWeight: 700, textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredEvents.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No se encontraron eventos sísmicos que coincidan con la búsqueda.
+                <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No se encontraron eventos sísmicos registrados con el criterio de búsqueda.
                 </td>
               </tr>
             ) : (
-              filteredEvents.map((ev) => (
-                <tr key={ev.id} style={{ borderBottom: '1px solid rgba(224, 86, 56, 0.08)', transition: 'background 0.2s ease' }}>
-                  <td style={{ padding: '14px 12px', fontWeight: 700, color: 'var(--terracotta)' }}>
-                    {ev.formatted_id}
-                  </td>
-                  <td style={{ padding: '14px 12px' }}>
-                    <span className={`badge-p${ev.prioridad}`} style={{ padding: '4px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.78rem' }}>
-                      Prioridad {ev.prioridad}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 12px', fontWeight: 700 }}>
-                    {ev.magnitud} M
-                  </td>
-                  <td style={{ padding: '14px 12px', color: 'var(--text-sub)' }}>
-                    {ev.profundidad} km
-                  </td>
-                  <td style={{ padding: '14px 12px', color: 'var(--text-sub)' }}>
-                    {ev.estacion_id}
-                  </td>
-                  <td style={{ padding: '14px 12px' }}>
-                    {ev.zona_poblada ? (
-                      <span style={{ color: '#F87171', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertCircle size={14} /> Habitada
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>No habitada</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                    <button
-                      className="btn-secondary"
-                      onClick={() => onEditEvent(ev)}
-                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                    >
-                      <Edit3 size={14} /> Corregir
-                    </button>
-                  </td>
-                </tr>
+              filteredEvents.map((ev, idx) => (
+                <EventRow
+                  key={ev.id}
+                  event={ev}
+                  index={idx}
+                  onEditEvent={onEditEvent}
+                />
               ))
             )}
           </tbody>
         </table>
       </div>
+
     </div>
   );
 }

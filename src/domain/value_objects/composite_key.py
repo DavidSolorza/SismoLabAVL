@@ -9,7 +9,7 @@ Represents the immutable key K = (P, M, I) used to order the AVL and BST Trees.
 Regla de ordenamiento / Ordering Rule:
 K1 < K2 ssi:
   1. P1 < P2  (Prioridad 1 es más crítica que 2 y 3 / Priority 1 is higher priority than 2 and 3)
-  2. Si P1 == P2: M1 > M2 (Mayor magnitud va primero / Higher magnitude goes first)
+  2. Si P1 == P2: M1 < M2 (Menor magnitud 1.0 va a la izquierda, mayor 9.0 a la derecha)
   3. Si P1 == P2 y M1 == M2: I1 < I2 (Menor ID desempata / Smaller ID breaks ties)
 """
 
@@ -64,24 +64,29 @@ class CompositeKeyK:
         if not isinstance(other, CompositeKeyK):
             return NotImplemented
         
-        # Criterio 1: Menor número de prioridad P (1 < 2 < 3) significa mayor prioridad sísmica
-        # Criterion 1: Smaller P number (1 < 2 < 3) means higher seismic priority
-        if self._P != other._P:
-            return self._P < other._P
-        
-        # Criterio 2: Si tienen la misma prioridad P, mayor magnitud M va primero (M1 > M2)
-        # Criterion 2: If same P, higher magnitude M goes first (M1 > M2)
+        # Criterio 1 (Principal): Magnitud numérica M (menor va a la izquierda <, mayor a la derecha >)
+        # Criterion 1 (Primary): Numerical magnitude M (smaller goes left <, greater goes right >)
         if self._M != other._M:
-            return self._M > other._M
+            return self._M < other._M
         
-        # Criterio 3: Si P y M son iguales, menor identificador I desempata (I1 < I2)
-        # Criterion 3: If P and M are equal, smaller ID breaks tie (I1 < I2)
-        return self._I < other._I
+        # Criterio 2: Identificador único I para desempate si tienen la misma magnitud
+        # Criterion 2: Unique ID I to break ties if magnitudes are identical
+        if self._I != other._I:
+            return self._I < other._I
+        
+        # Criterio 3: Prioridad P
+        return self._P < other._P
+
+    def __repr__(self) -> str:
+        return f"K(P={self._P}, M={self._M:.1f}, I={self._I})"
+
+    def __str__(self) -> str:
+        return f"K=[M:{self._M:.1f}, P:{self._P}, I:{self._I}]"
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, CompositeKeyK):
             return False
-        return (self._P == other._P) and (self._M == other._M) and (self._I == other._I)
+        return (self._M == other._M) and (self._I == other._I) and (self._P == other._P)
 
     def __gt__(self, other: 'CompositeKeyK') -> bool:
         if not isinstance(other, CompositeKeyK):

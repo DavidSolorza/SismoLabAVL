@@ -27,17 +27,23 @@ def make_event(ev_id: int, mag: float, depth: float, priority: int = None) -> Se
 
 
 def test_composite_key_ordering():
-    # Key 1: P=1 (High priority) vs Key 2: P=2 (Medium priority)
+    # Menor magnitud numérica M=5.0 va antes que M=6.0
     k1 = CompositeKeyK(1, 5.0, 100)
     k2 = CompositeKeyK(2, 6.0, 101)
-    assert k1 < k2  # P=1 comes before P=2
+    assert k1 < k2
 
-    # Same P=1, higher magnitude M=7.0 comes before M=5.0
-    k3 = CompositeKeyK(1, 7.0, 102)
-    k4 = CompositeKeyK(1, 5.0, 103)
+    # Un evento amarillo/verde de menor magnitud va a la izquierda de un sismo rojo
+    # An event of lower magnitude (even if yellow P=2 or green P=3) goes to the left of higher magnitude (red P=1)
+    k_amarillo = CompositeKeyK(2, 4.0, 200)
+    k_rojo = CompositeKeyK(1, 6.5, 201)
+    assert k_amarillo < k_rojo  # 4.0 M < 6.5 M -> Se ubica a la izquierda
+
+    # Misma prioridad P=1, menor magnitud M=5.0 va antes (a la izquierda) que M=7.0
+    k3 = CompositeKeyK(1, 5.0, 102)
+    k4 = CompositeKeyK(1, 7.0, 103)
     assert k3 < k4
 
-    # Same P=1, same M=5.0, smaller ID 100 comes before 105
+    # Misma magnitud M=5.0, menor ID 100 desempata y va antes que 105
     k5 = CompositeKeyK(1, 5.0, 100)
     k6 = CompositeKeyK(1, 5.0, 105)
     assert k5 < k6

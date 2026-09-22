@@ -202,3 +202,47 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   }
 }
 ```
+
+---
+
+#### 2.7. Catálogo de Eventos Sísmicos Predefinidos (`GET /api/v1/eventos/predefinidos`)
+**Descripción:** Retorna una lista estructurada de sismos colombianos históricos y sintéticos de referencia (P=1, P=2, P=3) para agilizar pruebas de balanceo e inserción rápida en 1 clic.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Catálogo de eventos predefinidos.
+```json
+{
+  "success": true,
+  "total": 10,
+  "predefinidos": [
+    {
+      "id": 1010,
+      "nombre": "Terremoto de Armenia (1999) - Destructivo Urbano",
+      "descripcion": "Sismo superficial en zona altamente poblada. Máxima prioridad de atención.",
+      "magnitud": 6.2,
+      "profundidad": 18.0,
+      "latitud": 4.53389,
+      "longitud": -75.68111,
+      "estacion_id": "EST-ARMENIA-01",
+      "zona_poblada": true,
+      "expected_priority": 1,
+      "categoria": "Crítico (P1)"
+    }
+  ]
+}
+```
+
+---
+
+#### 2.8. Limpieza y Reseteo Total del Árbol (`POST /api/v1/sistema/limpiar`)
+**Descripción:** Vacía totalmente el árbol AVL, el árbol BST, la cola FIFO de telemetría y la pila LIFO de deshacer, dejando el sistema en 0 nodos para pruebas limpias. Opcionalmente permite cargar o no muestras iniciales mediante el parámetro `cargar_muestras=false`.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Sistema vaciado exitosamente.
+```json
+{
+  "success": true,
+  "message": "Árbol AVL y estado del sistema limpiados totalmente.",
+  "total_nodos": 0
+}
+```

@@ -479,9 +479,49 @@ class ArbolAVL:
             "valor": ev_dict,
             "altura": nodo.getAltura(),
             "factor_balanceo": fb,
+            "relacion_izquierda": "MENOR (<)",
+            "relacion_derecha": "MAYOR (>)",
             "hijo_izquierdo": self._nodo_to_dict(nodo.getHijoIzquierdo()),
             "hijo_derecho": self._nodo_to_dict(nodo.getHijoDerecho())
         }
+
+    def imprimir_arbol(self) -> str:
+        """
+        Genera una representación visual en texto del árbol AVL indicando
+        explícitamente qué nodos son MENORES (izquierda <) y MAYORES (derecha >).
+        """
+        if self.raiz is None:
+            return "Árbol AVL Vacío (0 nodos)"
+
+        lineas: List[str] = []
+
+        def _recorrer(nodo: Optional[NodoAVL], prefijo: str = "", es_izq: Optional[bool] = None) -> None:
+            if nodo is None:
+                return
+
+            etiqueta = "RAIZ" if es_izq is None else ("<- [IZQ: MENOR (<)]" if es_izq else "[DER: MAYOR (>)] ->")
+            ev = nodo.getValor()
+            clave_str = str(getattr(ev, 'composite_key', ev))
+            mag_str = f"Mag: {getattr(ev, 'magnitude', getattr(ev, 'magnitud', '?'))} M"
+            info = f"{prefijo}{etiqueta}: {clave_str} | {mag_str} (h={nodo.getAltura()}, FB={self._calcularFactorDeBalanceo(nodo)})"
+            lineas.append(info)
+
+            h_izq = nodo.getHijoIzquierdo()
+            h_der = nodo.getHijoDerecho()
+            if h_izq or h_der:
+                if h_izq:
+                    _recorrer(h_izq, prefijo + "   |-- ", True)
+                else:
+                    lineas.append(prefijo + "   |-- <- [IZQ: MENOR (<)]: (Vacio)")
+
+                if h_der:
+                    _recorrer(h_der, prefijo + "   \\-- ", False)
+                else:
+                    lineas.append(prefijo + "   \\-- [DER: MAYOR (>)] ->: (Vacio)")
+
+        _recorrer(self.raiz)
+        resultado = "\n".join(lineas)
+        return resultado
 
     def contar_nodos(self) -> int:
         """Cuenta el total de nodos / Counts total nodes"""

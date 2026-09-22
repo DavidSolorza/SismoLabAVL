@@ -33,6 +33,7 @@ from src.infrastructure.persistence.in_memory_store import store
 from src.infrastructure.audit.avl_auditor import AVLAuditor
 from src.infrastructure.persistence.json_repository import JSONRepository
 from src.domain.entities.report import SeismicReport
+from src.domain.constants.predefined_events import PREDEFINED_EVENTS
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -44,7 +45,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
+    allow_origin_regex=r"^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -142,6 +151,17 @@ def archivar_rama(dto: ArchivarRamaDTO):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": e.code, "message": e.message})
 
 
+@app.post("/api/v1/sistema/limpiar", tags=["Maintenance"])
+def limpiar_arbol_total(cargar_muestras: bool = False):
+    """Limpia y resetea totalmente el árbol AVL, BST, cola de telemetría y pila de deshacer"""
+    store.clear_all(load_samples=cargar_muestras)
+    return {
+        "success": True,
+        "message": "Árbol AVL y estado del sistema limpiados totalmente.",
+        "total_nodos": store.avl_tree.contar_nodos()
+    }
+
+
 @app.get("/api/v1/eventos", tags=["Queries"])
 def listar_eventos_ordenados():
     """Retorna los eventos ordenados por la Clave Compuesta K=(P, M, I) mediante recorrido Inorden en el AVL"""
@@ -149,6 +169,16 @@ def listar_eventos_ordenados():
     return {
         "total": len(eventos),
         "eventos": [e.to_dict() for e in eventos]
+    }
+
+
+@app.get("/api/v1/eventos/predefinidos", tags=["Queries"])
+def listar_eventos_predefinidos():
+    """Retorna el catálogo de eventos sísmicos de prueba predefinidos con parámetros colombianos"""
+    return {
+        "success": True,
+        "total": len(PREDEFINED_EVENTS),
+        "predefinidos": PREDEFINED_EVENTS
     }
 
 

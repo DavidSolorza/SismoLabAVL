@@ -1,38 +1,78 @@
 /* ==========================================================================
-   SismoLab AVL - Design System & CSS Variables (Warm Aesthetics)
-   Universidad de Caldas
+   SismoLab AVL - Design System & CSS Variables (Clean & Pastel Soft UI)
+   Universidad de Caldas - Monitoreo Sísmico Inteligente
    ========================================================================== */
 
 :root {
-  --bg-main: #14110F;
-  --bg-card: rgba(30, 25, 22, 0.85);
-  --bg-card-hover: rgba(42, 35, 31, 0.95);
-  --border-warm: rgba(224, 86, 56, 0.2);
-  --border-warm-glow: rgba(245, 158, 11, 0.4);
+  /* Paleta General: Fondos Luminosos y Superficies */
+  --bg-main: #F8FAFC;
+  --bg-gradient-1: rgba(79, 70, 229, 0.04);
+  --bg-gradient-2: rgba(59, 130, 246, 0.04);
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+  --bg-card-alt: #F1F5F9;
 
-  --terracotta: #E05638;
-  --terracotta-glow: rgba(224, 86, 56, 0.35);
-  --coral: #FF6B4A;
-  --amber: #F59E0B;
-  --amber-glow: rgba(245, 158, 11, 0.35);
-  --yellow-warm: #EAB308;
-  --emerald: #10B981;
+  /* Bordes Sutiles */
+  --border-subtle: #E2E8F0;
+  --border-card: #E2E8F0;
+  --border-focus: #4F46E5;
+  --border-hover: #CBD5E1;
 
-  --p1-red: #EF4444;
-  --p2-amber: #F59E0B;
-  --p3-yellow: #EAB308;
+  /* Tipografía y Contraste de Textos */
+  --text-primary: #1E293B;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --text-light: #F8FAFC;
 
-  --text-bright: #FFFDF9;
-  --text-sub: #D1C7BD;
-  --text-muted: #9E9287;
+  /* Prioridades Pasteles (Diseño Científico Amigable y Jerarquía Visual) */
+  /* P=1: Crítico / Emergencia Alta */
+  --p1-bg: #FEE2E2;
+  --p1-text: #991B1B;
+  --p1-border: #FECACA;
+  --p1-glow: rgba(239, 68, 68, 0.15);
 
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  /* P=2: Moderado / Advertencia */
+  --p2-bg: #FEF3C7;
+  --p2-text: #92400E;
+  --p2-border: #FDE68A;
+  --p2-glow: rgba(245, 158, 11, 0.15);
 
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'Fira Code', monospace;
+  /* P=3: Normal / Vigilancia */
+  --p3-bg: #ECFDF5;
+  --p3-text: #065F46;
+  --p3-border: #A7F3D0;
+  --p3-glow: rgba(16, 185, 129, 0.15);
+
+  /* Color de Acento Principal (Brand & Core Actions) */
+  --accent: #4F46E5;
+  --accent-hover: #4338CA;
+  --accent-light: #EEF2FF;
+  --accent-text: #3730A3;
+  --accent-border: #C7D2FE;
+  --accent-shadow: rgba(79, 70, 229, 0.16);
+
+  /* Acentos de Alerta Complementarios */
+  --coral-soft: #EF4444;
+  --amber-soft: #F59E0B;
+  --emerald-soft: #10B981;
+  --blue-soft: #3B82F6;
+
+  /* Radio de Bordes */
+  --radius-xl: 20px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+
+  /* Sombras Suaves (Soft UI) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 24px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 32px -4px rgba(15, 23, 42, 0.1), 0 8px 16px -3px rgba(15, 23, 42, 0.05);
+
+  /* Fuentes */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
 }
 
 * {
@@ -44,138 +84,174 @@
 body {
   background-color: var(--bg-main);
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(224, 86, 56, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.10) 0%, transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(20, 17, 15, 1) 0%, transparent 100%);
+    radial-gradient(circle at 10% 10%, var(--bg-gradient-1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, var(--bg-gradient-2) 0%, transparent 40%);
   background-attachment: fixed;
-  color: var(--text-bright);
+  color: var(--text-primary);
   font-family: var(--font-body);
   line-height: 1.5;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
-/* Glassmorphism Container */
+/* Superficie Estilo Glassmorphism Suave / Soft Surface */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-warm);
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
-  border-color: var(--border-warm-glow);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
 }
 
-/* Header & Typography */
+/* Tipografía y Acentos */
 .gradient-text {
-  background: linear-gradient(135deg, #FFFDF9 0%, #FF6B4A 50%, #F59E0B 100%);
+  background: linear-gradient(135deg, #1E293B 0%, #4F46E5 60%, #3B82F6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
+/* Badges de Prioridad Pastel */
 .badge-p1 {
-  background: rgba(239, 68, 68, 0.18);
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-}
-.badge-p2 {
-  background: rgba(245, 158, 11, 0.18);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-.badge-p3 {
-  background: rgba(234, 179, 8, 0.18);
-  color: #FDE047;
-  border: 1px solid rgba(234, 179, 8, 0.4);
+  background-color: var(--p1-bg);
+  color: var(--p1-text);
+  border: 1px solid var(--p1-border);
 }
 
-/* Buttons */
+.badge-p2 {
+  background-color: var(--p2-bg);
+  color: var(--p2-text);
+  border: 1px solid var(--p2-border);
+}
+
+.badge-p3 {
+  background-color: var(--p3-bg);
+  color: var(--p3-text);
+  border: 1px solid var(--p3-border);
+}
+
+/* Botones con Estilo Moderno y Pasteles */
 .btn-primary {
-  background: linear-gradient(135deg, var(--terracotta) 0%, var(--coral) 100%);
-  color: #FFFDF9;
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: #FFFFFF;
   font-family: var(--font-heading);
   font-weight: 600;
-  padding: 10px 20px;
+  padding: 10px 18px;
   border-radius: var(--radius-md);
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
-  box-shadow: 0 4px 14px var(--terracotta-glow);
+  box-shadow: 0 4px 12px var(--accent-shadow);
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.9rem;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--terracotta-glow);
-  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--accent-shadow);
+  background: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-secondary {
-  background: rgba(42, 35, 31, 0.8);
-  color: var(--text-bright);
+  background: #FFFFFF;
+  color: var(--text-secondary);
   font-family: var(--font-heading);
   font-weight: 500;
-  padding: 10px 18px;
+  padding: 9px 16px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-warm);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.88rem;
 }
 
 .btn-secondary:hover {
-  background: rgba(58, 48, 43, 0.9);
-  border-color: var(--amber);
+  background: var(--bg-card-alt);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
 }
 
-/* Tree Visualizer Node Styles */
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Tarjeta de Nodo del Árbol AVL */
 .avl-node-card {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
 }
 
 .avl-node-card:hover {
-  transform: scale(1.08) translateY(-4px);
-  z-index: 20;
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: var(--shadow-xl);
+  z-index: 30;
 }
 
-/* Custom Scrollbar */
+/* Barra de Desplazamiento Personalizada */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #14110F;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3A302B;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--terracotta);
+  background: #94A3B8;
 }
 
-/* Animations */
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(224, 86, 56, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
+/* Animaciones */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.pulse-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
+.spin-animation {
+  animation: spinSlow 1s linear infinite;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.03); opacity: 0.92; }
+}
+
+.pulse-subtle {
+  animation: pulseSubtle 3s infinite ease-in-out;
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-in {
+  animation: slideInUp 0.3s ease-out;
 }

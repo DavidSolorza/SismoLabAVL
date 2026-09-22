@@ -6,7 +6,7 @@ export default function Toast({ toast, onClose }) {
     if (toast) {
       const timer = setTimeout(() => {
         onClose();
-      }, 4000);
+      }, 4500);
       return () => clearTimeout(timer);
     }
   }, [toast, onClose]);
@@ -18,19 +18,30 @@ export default function Toast({ toast, onClose }) {
   return (
     <div style={{
       position: 'fixed', bottom: '24px', right: '24px', zIndex: 2000,
-      background: isError ? 'rgba(40, 18, 18, 0.95)' : 'rgba(20, 32, 25, 0.95)',
-      backdropFilter: 'blur(12px)',
-      border: `1px solid ${isError ? '#EF4444' : '#10B981'}`,
-      boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-      padding: '14px 20px', borderRadius: '12px',
+      backgroundColor: '#FFFFFF',
+      border: `1px solid ${isError ? 'var(--p1-border)' : 'var(--p3-border)'}`,
+      borderLeft: `4px solid ${isError ? 'var(--coral-soft)' : 'var(--emerald-soft)'}`,
+      boxShadow: 'var(--shadow-xl)',
+      padding: '14px 18px', borderRadius: 'var(--radius-md)',
       display: 'flex', alignItems: 'center', gap: '12px',
-      color: '#FFFDF9', maxWidth: '420px',
-      animation: 'slideIn 0.3s ease-out'
+      color: 'var(--text-primary)', maxWidth: '420px',
+      animation: 'slideInUp 0.25s ease-out'
     }}>
-      {isError ? <AlertTriangle color="#F87171" size={22} /> : <CheckCircle2 color="#34D399" size={22} />}
-      <div style={{ flex: 1, fontSize: '0.9rem' }}>{toast.message}</div>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-        <X size={18} />
+      {isError ? (
+        <AlertTriangle style={{ color: 'var(--coral-soft)', flexShrink: 0 }} size={20} />
+      ) : (
+        <CheckCircle2 style={{ color: 'var(--emerald-soft)', flexShrink: 0 }} size={20} />
+      )}
+      
+      <div style={{ flex: 1, fontSize: '0.86rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+        {toast.message}
+      </div>
+
+      <button
+        onClick={onClose}
+        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}
+      >
+        <X size={16} />
       </button>
     </div>
   );
