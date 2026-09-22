@@ -51,7 +51,7 @@ export default function QuickActions({
                 fontWeight: 600, maxWidth: '240px'
               }}
             >
-              <option value="">⚡ Insertar Predefinido (1 Clic)...</option>
+              <option value="">Insertar Predefinido (1 Clic)...</option>
               {PREDEFINED_EVENTS.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.nombre} (M{p.magnitud}, P{p.prioridadEsperada})

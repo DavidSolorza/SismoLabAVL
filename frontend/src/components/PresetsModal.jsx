@@ -91,7 +91,7 @@ export default function PresetsModal({
                   <span>•</span>
                   <span>Prof: {preset.profundidad} km</span>
                   <span>•</span>
-                  <span>{preset.zona_poblada ? '🏙️ Urbana' : '🌲 Rural'}</span>
+                  <span>{preset.zona_poblada ? 'Urbana' : 'Rural'}</span>
                 </div>
               </div>
 

@@ -3,7 +3,7 @@ import {
   GitCommit, Crown, ZoomIn, ZoomOut, Maximize2, Minimize2,
   Move, Search, AlertTriangle, CheckCircle2, Split, Crosshair,
   PlusCircle, Sparkles, Undo2, BarChart3, Database, Clock,
-  Scissors, Trash2, RefreshCw, Activity
+  Scissors, Trash2, RefreshCw, Activity, Layers, GitBranch, X
 } from 'lucide-react';
 
 /**
@@ -389,7 +389,17 @@ export default function AVLVisualizer({
       }}>
         {/* Logotipo y Título */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '1.35rem' }}>🌋</span>
+          <div style={{
+            padding: '5px',
+            borderRadius: '9px',
+            backgroundColor: 'var(--accent-light)',
+            color: 'var(--accent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Activity size={18} />
+          </div>
           <div>
             <h1 style={{ fontSize: '0.96rem', fontWeight: 800, lineHeight: 1.1 }} className="gradient-text">
               SismoLab AVL
@@ -430,7 +440,7 @@ export default function AVLVisualizer({
           backgroundColor: '#F1F5F9',
           color: 'var(--text-secondary)'
         }}>
-          🌳 AVL: <strong>h={avlHeight}</strong> • 🌱 BST: <strong>h={bstHeight}</strong>
+          AVL: <strong>h={avlHeight}</strong> • BST: <strong>h={bstHeight}</strong>
         </span>
 
         {/* Botón de Sincronización / Refrescar */}
@@ -490,7 +500,7 @@ export default function AVLVisualizer({
             }}
           >
             <Split size={14} />
-            <span>⚖️ Ambos (Dual)</span>
+            <span>Ambos (Dual)</span>
           </button>
 
           <button
@@ -510,7 +520,8 @@ export default function AVLVisualizer({
               boxShadow: viewMode === 'avl' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            <span>🌳 Solo AVL</span>
+            <Layers size={14} />
+            <span>Solo AVL</span>
           </button>
 
           <button
@@ -530,7 +541,8 @@ export default function AVLVisualizer({
               boxShadow: viewMode === 'bst' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            <span>🌱 Solo BST</span>
+            <GitBranch size={14} />
+            <span>Solo BST</span>
           </button>
         </div>
 
@@ -562,9 +574,10 @@ export default function AVLVisualizer({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)' }}
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', color: 'var(--text-muted)' }}
+              title="Limpiar búsqueda"
             >
-              ✕
+              <X size={12} />
             </button>
           )}
         </div>
@@ -613,7 +626,7 @@ export default function AVLVisualizer({
           title="Abrir catálogo rápido de sismos colombianos predefinidos"
         >
           <Sparkles size={14} style={{ color: '#D97706' }} />
-          <span>⚡ Sismos Predefinidos</span>
+          <span>Sismos Predefinidos</span>
         </button>
 
         {/* Deshacer (Undo LIFO) */}
@@ -843,7 +856,7 @@ export default function AVLVisualizer({
                 Árboles Vacíos (0 Nodos)
               </h3>
               <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5 }}>
-                Usa el botón <strong>"+ Nuevo Sismo"</strong> o <strong>"⚡ Sismos Predefinidos"</strong> en la esquina superior derecha para comenzar.
+                Usa el botón <strong>"+ Nuevo Sismo"</strong> o <strong>"Sismos Predefinidos"</strong> en la esquina superior derecha para comenzar.
               </p>
             </div>
           ) : (
@@ -877,7 +890,9 @@ export default function AVLVisualizer({
                       borderBottom: '1px dashed #CBD5E1'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.3rem' }}>🌳</span>
+                        <div style={{ padding: '6px', borderRadius: '10px', backgroundColor: 'var(--accent-light)', color: 'var(--accent)', display: 'flex' }}>
+                          <Layers size={18} />
+                        </div>
                         <div>
                           <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                             Árbol AVL (Auto-balanceado)
@@ -936,7 +951,9 @@ export default function AVLVisualizer({
                       borderBottom: '1px dashed #CBD5E1'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.3rem' }}>🌱</span>
+                        <div style={{ padding: '6px', borderRadius: '10px', backgroundColor: '#F1F5F9', color: 'var(--text-secondary)', display: 'flex' }}>
+                          <GitBranch size={18} />
+                        </div>
                         <div>
                           <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                             Árbol BST Clásico
@@ -955,7 +972,7 @@ export default function AVLVisualizer({
                         color: bstHeight > avlHeight ? 'var(--p2-text)' : 'var(--text-secondary)',
                         border: `1px solid ${bstHeight > avlHeight ? 'var(--p2-border)' : '#CBD5E1'}`
                       }}>
-                        {bstHeight > avlHeight ? '⚠️ Mayor Profundidad' : 'Sin Rotaciones'} | h={bstHeight}
+                        {bstHeight > avlHeight ? 'Mayor Profundidad' : 'Sin Rotaciones'} | h={bstHeight}
                       </span>
                     </div>
 
@@ -1000,7 +1017,9 @@ export default function AVLVisualizer({
                     borderBottom: '1px dashed #CBD5E1'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.4rem' }}>🌳</span>
+                      <div style={{ padding: '6px', borderRadius: '10px', backgroundColor: 'var(--accent-light)', color: 'var(--accent)', display: 'flex' }}>
+                        <Layers size={20} />
+                      </div>
                       <div>
                         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                           Topología Completa: Árbol AVL Auto-balanceado
@@ -1061,7 +1080,9 @@ export default function AVLVisualizer({
                     borderBottom: '1px dashed #CBD5E1'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.4rem' }}>🌱</span>
+                      <div style={{ padding: '6px', borderRadius: '10px', backgroundColor: '#F1F5F9', color: 'var(--text-secondary)', display: 'flex' }}>
+                        <GitBranch size={20} />
+                      </div>
                       <div>
                         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                           Topología Completa: Árbol Binario de Búsqueda (BST Clásico)

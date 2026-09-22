@@ -91,7 +91,7 @@ export default function EventList({ events = [], onEditEvent }) {
                     <span>•</span>
                     <span>{ev.profundidad} km</span>
                     <span>•</span>
-                    <span>{ev.zona_poblada ? '🏙️' : '🌲'}</span>
+                    <span>{ev.zona_poblada ? 'Urbana' : 'Rural'}</span>
                   </div>
                 </div>
 
