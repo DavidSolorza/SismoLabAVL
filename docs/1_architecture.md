@@ -112,8 +112,10 @@ graph TD
   - $P \in \{1, 2, 3\}$: Prioridad (1=Alta, 2=Media, 3=Baja).
   - $M \in [-2.0, 10.0]$: Magnitud en escala Richter/Momentum.
   - $I \in [1, 999999]$: Identificador único inmutable `SIS-XXXXXX`.
-  - Regla de Ordenamiento: $K_1 < K_2 \iff (P_1 < P_2) \lor (P_1 = P_2 \land M_1 > M_2) \lor (P_1 = P_2 \land M_1 = M_2 \land I_1 < I_2)$.
-- **Consecuencias / Consequences:** Permite recorridos en-orden que extraen los eventos sísmicos en orden estricto de criticidad operacional.
+  - Regla de Ordenamiento Lexicográfica de Tres Niveles:
+    $$K_1 < K_2 \iff (P_1 < P_2) \lor (P_1 = P_2 \land M_1 < M_2) \lor (P_1 = P_2 \land M_1 = M_2 \land I_1 < I_2)$$
+  - Estructura Auxiliar de Búsqueda $O(1)$: Para desacoplar el ordenamiento por prioridades del AVL de la necesidad operativa de consultar eventos por su identificador único sin incurrir en búsquedas exhaustivas $O(N)$, el árbol implementa `self.indice_por_id = { id_entero: referencia_al_nodo_avl }`, garantizando acceso instantáneo $O(1)$ con sincronización inmutable ante inserción, eliminación y balanceo.
+- **Consecuencias / Consequences:** Permite recorridos en-orden que extraen los eventos sísmicos en orden estricto de criticidad operacional y resolución de búsquedas por ID en tiempo constante $O(1)$.
 
 #### ADR-003: Modos de Operación AVL (Normal vs. Estrés)
 - **Estatus / Status:** Aprobado / Approved
@@ -122,6 +124,23 @@ graph TD
   1. **Modo Normal:** Auto-balanceo recursivo inmediato (rotaciones LL, RR, LR, RL) manteniendo $|FB| \le 1$.
   2. **Modo Estrés:** Inserción rápida estilo BST registrando los nodos desbalanceados en una cola de auditoría para balanceo diferido post-crisis.
 - **Consecuencias / Consequences:** Rendimiento óptimo en escenarios de alta carga y garantía de balance estricto en operación normal.
+
+#### ADR-004: Arquitectura de Interfaz de Usuario en Tres Bloques Funcionales Desacoplados
+- **Estatus / Status:** Aprobado / Approved
+- **Contexto / Context:** 
+  - *Español:* En interfaces de monitoreo de estructuras de datos en tiempo real, disponer todos los controles en una sola línea continua satura la atención visual y desordena la jerarquía operativa.
+  - *English:* In real-time data structure monitoring dashboards, placing all operational controls in a single continuous row saturates visual bandwidth and clutters operational hierarchy.
+- **Decisión / Decision:** 
+  - *Español:* Dividir la barra superior en tres cápsulas flotantes independientes sin emojis (solo iconos SVG limpios):
+    1. **Bloque Izquierdo:** Identidad y Estado Operativo (Logo + Sello, Estado NORMAL/ESTRÉS, Alturas AVL/BST).
+    2. **Bloque Central:** Dimensión Temporal y Filtros (Reloj UTC + Sincronización, Selector de Vista Dual/AVL/BST, Barra de Búsqueda Global).
+    3. **Bloque Derecho:** Acciones Críticas de Ingesta (Deshacer LIFO, Sismos Predefinidos, + Nuevo Sismo).
+  - *English:* Partition the top App Bar into three independent floating capsules without emojis (pure SVG icons only):
+    1. **Left Block:** Identity & Operational Status (Brand + Seal, NORMAL/STRESS Mode, AVL/BST Heights).
+    2. **Center Block:** Temporal Controls & Visual Filters (UTC Clock + Sync, Dual/AVL/BST View Selector, Global Search).
+    3. **Right Block:** Critical Ingestion Actions (LIFO Undo, Predefined Seismic Presets, + New Event).
+- **Consecuencias / Consequences:**
+  - *Positivas:* Mayor claridad cognitiva, área central de visualización del árbol 100% despejada y navegación intuitiva.
 
 ---
 

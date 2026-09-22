@@ -1,73 +1,78 @@
-# 🌋 SismoLab AVL - Guía de Instalación, Ejecución y Arquitectura
-## Universidad de Caldas - Estructuras de Datos Avanzadas
+# SismoLab AVL - Observatorio Sísmico Inteligente / Intelligent Seismic Observatory
+## Universidad de Caldas - Estructuras de Datos Avanzadas / Advanced Data Structures
 
 ---
 
-### 📖 Descripción del Proyecto
+### Descripción del Proyecto / Project Overview
 
-**SismoLab AVL** es un sistema de monitoreo y gestión de eventos sísmicos en tiempo real desarrollado en **Python** y **React + Vite**. El sistema organiza y clasifica eventos sísmicos mediante una clave compuesta inmutable \(K = (P, M, I)\) (Prioridad, Magnitud e Identificador), garantizando tiempos de búsqueda e inserción logarítmicos \(O(\log n)\).
+**Español:**
+**SismoLab AVL** es un sistema de monitoreo, clasificación y gestión de eventos sísmicos en tiempo real desarrollado en **Python (FastAPI + CLI)** y **React + Vite (Frontend)**. El sistema organiza y clasifica eventos sísmicos mediante una clave compuesta inmutable:
+$$K = (P, M, I)$$
+donde **$P$ es la Prioridad sísmica (1=Alta/Crítica, 2=Media, 3=Baja)**, **$M$ es la Magnitud numérica en escala Richter/Momentum**, e **$I$ es el Identificador numérico único (`SIS-XXXXXX`)**.
 
-#### Patrones de Diseño y Arquitectura:
-- **Domain-Driven Design (DDD):** Lógica del negocio aislada e independiente en `src/domain/`.
-- **Vertical Slices (Cortes Verticales):** Funcionalidades organizadas autónomamente en `src/features/`.
-- **Estructuras de Datos Puramente Recursivas:** 
-  - **Árbol AVL:** Árbol auto-balanceado con operaciones de rotación (Normal y Modo Estrés).
-  - **Árbol BST:** Árbol binario de búsqueda para comparación y benchmarking.
-  - **Pila LIFO (Stack):** Historial de operaciones para la funcionalidad Deshacer (Undo).
-  - **Cola FIFO (Queue):** Telemetría e ingesta secuencial de reportes sísmicos.
-- **Frontend Interactivo:** Dashboard moderno en React + Vite para visualizar el árbol AVL, interactuar con los nodos y gestionar la alerta de sismos.
+El Árbol AVL mantiene balance estricto mediante rotaciones simples (LL, RR) y dobles (LR, RL), operando bajo dos modalidades: **Modo Normal** (auto-balance inmediato en cada inserción) y **Modo Estrés** (inserción acelerada estilo BST con balanceo diferido). Para desacoplar el ordenamiento por prioridades del árbol de las búsquedas operativas por identificador, el sistema incorpora un **Hash Map auxiliar en memoria (`indice_por_id`)**, garantizando búsquedas por ID en tiempo constante $O(1)$ sin realizar recorridos exhaustivos $O(N)$.
+
+**English:**
+**SismoLab AVL** is a real-time seismic event monitoring, classification, and management system built with **Python (FastAPI + CLI)** and **React + Vite (Frontend)**. The system prioritizes and organizes seismic telemetry using an immutable composite key:
+$$K = (P, M, I)$$
+where **$P$ is Seismic Priority (1=High/Critical, 2=Medium, 3=Low)**, **$M$ is Seismic Magnitude**, and **$I$ is the Unique Numeric Identifier (`SIS-XXXXXX`)**.
+
+The AVL Tree strictly preserves logarithmic height balance via single (LL, RR) and double (LR, RL) rotations, featuring two operational regimes: **Normal Mode** (immediate recursive auto-balancing) and **Stress Mode** (accelerated BST insertion with deferred rebalancing). To decouple priority tree ordering from operational lookups by event ID, the system integrates an **in-memory auxiliary Hash Map (`indice_por_id`)**, achieving guaranteed $O(1)$ constant-time ID retrieval without costly $O(N)$ tree scans.
 
 ---
 
-### ⚙️ Requisitos Previos
+### Lógica Numérica de la Clave Compuesta / Composite Key Ordering Logic
 
-Asegúrate de contar con los siguientes entornos instalados en tu equipo antes de comenzar:
+**Regla Lexicográfica de 3 Niveles / 3-Level Lexicographical Rule:**
+$$K_1 < K_2 \iff (P_1 < P_2) \lor (P_1 = P_2 \land M_1 < M_2) \lor (P_1 = P_2 \land M_1 = M_2 \land I_1 < I_2)$$
 
-- **Python:** Versión **3.10**, **3.11** o **3.12** (Recomendado: Python 3.11+).
-- **Node.js:** Versión **18.x** o superior (Recomendado: Node.js 20 LTS) y **npm**.
+1. **Prioridad ($P$):** La prioridad manda sobre todo lo demás. Si el Sismo A tiene Prioridad 1 (Alta) y el Sismo B tiene Prioridad 2 (Media), el Sismo A es numéricamente menor ($1 < 2$) y se ubica estrictamente a la **izquierda** en el árbol AVL.
+2. **Magnitud ($M$):** Si las prioridades empatan (ej. ambos son Prioridad 1), se compara la magnitud numérica. La menor magnitud va a la izquierda.
+3. **Identificador ($I$):** Si prioridad y magnitud empatan, el menor ID numérico único desempata y va a la izquierda.
+
+**Búsqueda en Tiempo $O(1)$ por Identificador / $O(1)$ ID Search:**
+Al estar el AVL ordenado por Prioridad y Magnitud, recorrer el árbol por ID requeriría tiempo lineal $O(N)$. Por ello, el árbol mantiene una tabla hash auxiliar:
+```python
+self.indice_por_id = { id_entero: referencia_al_nodo_avl }
+```
+Cada inserción, eliminación o rebalanceo sincroniza este índice, permitiendo consultar cualquier nodo por su ID en tiempo promedio $O(1)$.
+
+---
+
+### Requisitos Previos / Prerequisites
+
+- **Python:** Version **3.10**, **3.11** o **3.12** (Recomendado: Python 3.11+).
+- **Node.js:** Version **18.x** o superior (Recomendado: Node.js 20 LTS) y **npm**.
 - **Git:** Para clonar el repositorio.
 
 ---
 
-### 🚀 Instalación Paso a Paso
+### Instalación Paso a Paso / Step-by-Step Setup
 
-#### 1. Clonar el Repositorio
+#### 1. Clonar el Repositorio / Clone Repository
 ```bash
 git clone https://github.com/DavidSolorza/SismoLabAVL.git
 cd SismoLabAVL
 ```
 
-#### 2. Configurar el Entorno Virtual de Python (Backend)
-
-##### En Windows (PowerShell / CMD):
+#### 2. Entorno Virtual de Python / Python Virtual Environment
+##### En Windows (PowerShell):
 ```powershell
-# Crear el entorno virtual
 python -m venv .venv
-
-# Activar el entorno virtual (PowerShell)
 .\.venv\Scripts\Activate.ps1
-
-# O activar en CMD:
-# .venv\Scripts\activate.bat
 ```
-
 ##### En Linux / macOS:
 ```bash
-# Crear el entorno virtual
 python3 -m venv .venv
-
-# Activar el entorno virtual
 source .venv/bin/activate
 ```
 
-#### 3. Instalar Dependencias del Backend
-Con el entorno virtual activado, instala las dependencias necesarias:
+#### 3. Instalar Dependencias del Backend / Install Backend Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Instalar Dependencias del Frontend (React + Vite)
-Navega a la carpeta `frontend` e instala los paquetes de Node:
+#### 4. Instalar Dependencias del Frontend / Install Frontend Dependencies
 ```bash
 cd frontend
 npm install
@@ -76,57 +81,73 @@ cd ..
 
 ---
 
-### ▶️ Ejecución del Proyecto
+### Ejecución del Sistema / Running the System
 
-#### Opción A: Ejecutar el Servidor Backend (API RESTful FastAPI)
-Inicia la API backend para permitir la comunicación con el frontend o cliente HTTP:
+#### Opción 1: Servidor Backend FastAPI / FastAPI Backend Server
+Inicia la API RESTful de alto rendimiento:
 ```bash
-uvicorn src.presentation.api.main:app --reload --port 8000
+python -m uvicorn src.presentation.api.main:app --reload --port 8000
 ```
-- **Servidor activo en:** `http://localhost:8000`
-- **Documentación Interactiva (Swagger UI):** `http://localhost:8000/docs`
-- **Documentación alternativa (ReDoc):** `http://localhost:8000/redoc`
+- **API URL:** `http://127.0.0.1:8000`
+- **Documentación Swagger UI:** `http://127.0.0.1:8000/docs`
+- **Documentación ReDoc:** `http://127.0.0.1:8000/redoc`
 
-#### Opción B: Ejecutar la Interfaz Web Frontend (Dashboard React)
-En una nueva consola de terminal, navega al directorio del frontend e inicia el servidor de desarrollo:
+#### Opción 2: Frontend Web Interactivo / Interactive Web Frontend
+En una nueva terminal, inicia el servidor de desarrollo Vite:
 ```bash
 cd frontend
 npm run dev
 ```
-- **Aplicación web disponible en:** `http://localhost:5173`
+- **Dashboard Web:** `http://127.0.0.1:5173`
 
-#### Opción C: Ejecutar la CLI Interactiva (Consola de Terminal)
-Si prefieres interactuar directamente desde la terminal mediante consola de comandos:
+#### Opción 3: Consola CLI Interactiva / Interactive CLI Console
+Para interactuar directamente desde la terminal con todas las operaciones del backend:
 ```bash
 python -m src.presentation.cli.main
 ```
 
 ---
 
-### 🧪 Ejecución de Pruebas Automatizadas
+### Interfaz Web: Organización en Tres Bloques Funcionales / UI 3-Block Architecture
 
-Para validar que las estructuras de datos (AVL, BST, Pila, Cola) y las reglas de negocio funcionan correctamente:
+La barra superior del visualizador web implementa una arquitectura desacoplada en tres cápsulas flotantes sin emojis (solo iconos vectoriales Lucide):
 
-```bash
-# Ejecutar suite completa con Pytest
-pytest tests/
-
-# O ejecutar el script de pruebas unificado
-python run_tests.py
-```
+| Bloque / Block | Controles Agrupados / Grouped Controls | Propósito Funcional / Functional Purpose |
+| :--- | :--- | :--- |
+| **Izquierdo / Left** | Logo institucional, Estado Operacional (`NORMAL` / `ESTRÉS`), Métricas en vivo (`AVL: h=... · BST: h=...`) | Identidad institucional y supervisión instantánea del estado de balance. |
+| **Central / Center** | Reloj de simulación UTC con botón de recarga/avance, selector de vistas (`Ambos Dual`, `Solo AVL`, `Solo BST`), barra de búsqueda global | Dimensión temporal y filtrado interactivo sobre la estructura de datos. |
+| **Derecho / Right** | `Deshacer` (Pila LIFO), `Sismos Predefinidos` (Catálogo Colombiano), `+ Nuevo Sismo` (Botón Primario) | Ingesta transaccional de eventos y reversión segura de operaciones. |
 
 ---
 
-### 📂 Estructura del Directorio
+### Suite de Pruebas Automatizadas / Automated Test Suite
+
+Para ejecutar las 7 baterías de pruebas unitarias y de invariantes (100% aprobadas):
+```bash
+python run_tests.py
+```
+
+Baterías verificadas:
+1. `[1/7]` Ordenamiento estricto de Clave Compuesta $K=(P, M, I)$ (regla de tres niveles).
+2. `[2/7]` Búsqueda $O(1)$ e invariantes de sincronización del índice hash en memoria (`indice_por_id`).
+3. `[3/7]` Inserción recursiva, factores de balanceo $|FB| \le 1$ y rotaciones del Árbol AVL.
+4. `[4/7]` Modo Estrés y balanceo diferido global post-emergencia.
+5. `[5/7]` Cortes verticales: creación de eventos, corrección y reversión en Pila LIFO.
+6. `[6/7]` Cortes verticales: procesamiento de cola FIFO de telemetría y poda de ramas por prioridad.
+7. `[7/7]` Reloj de simulación explícito en UTC y rechazo de eventos futuros.
+
+---
+
+### Estructura del Directorio / Directory Layout
 
 ```
 SismoLabAVL/
 ├── docs/                    # Especificaciones técnicas y gobernanza del proyecto
-│   ├── 1_architecture.md    # Arquitectura DDD, Diagramas Mermaid y ADRs
+│   ├── 1_architecture.md    # Arquitectura DDD, Diagramas Mermaid y ADRs (ADR-001 a ADR-004)
 │   ├── 2_database.md        # Diccionario de datos y modelo de persistencia JSON
 │   └── 3_api_spec.md        # Especificación técnica detallada de la API REST
 ├── src/                     # Código fuente del Backend
-│   ├── core/                # Bus de comandos, errores y cliente HTTP nativo
+│   ├── core/                # Bus de comandos, errores y configuraciones
 │   ├── domain/              # Entidades, Value Objects, Reglas y Estructuras (AVL, BST, Stack, Queue)
 │   ├── features/            # Cortes verticales por caso de uso (Crear, Corregir, Procesar, Deshacer, Archivar)
 │   ├── infrastructure/      # Auditoría estructural del AVL y persistencia JSON/Memoria
@@ -138,13 +159,5 @@ SismoLabAVL/
 ├── tests/                   # Pruebas unitarias e integración de estructuras AVL
 ├── requirements.txt         # Dependencias backend de Python
 ├── run_tests.py             # Script ejecutor de pruebas
-└── README.md                # Guía técnica de inicialización
+└── README.md                # Guía técnica de inicialización bilingüe
 ```
-
----
-
-### 📄 Documentación Adicional
-Para más detalles sobre la arquitectura, el diseño de datos o la especificación de los endpoints RESTful, consulta la carpeta `docs/`:
-- [docs/1_architecture.md](docs/1_architecture.md)
-- [docs/2_database.md](docs/2_database.md)
-- [docs/3_api_spec.md](docs/3_api_spec.md)

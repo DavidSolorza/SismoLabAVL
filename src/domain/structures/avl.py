@@ -72,9 +72,25 @@ class ArbolAVL:
     def __init__(self, modo: OperationalMode = OperationalMode.NORMAL):
         self.raiz: Optional[NodoAVL] = None
         self.modo: OperationalMode = modo
+        # Estructura auxiliar de búsqueda O(1) por Identificador Único (Hash Map en memoria)
+        # Auxiliary O(1) search structure by Unique Identifier (In-memory Hash Map)
+        self.indice_por_id: Dict[int, NodoAVL] = {}
         # Registro de nodos potencialmente desbalanceados durante Modo Estrés
         # Registry of potentially unbalanced nodes during Stress Mode
         self._nodos_desbalanceados: List[NodoAVL] = []
+
+    @staticmethod
+    def _extraer_id(dato: Any) -> Optional[int]:
+        """Extrae el ID numérico del dato / Extracts numeric ID from data item"""
+        if hasattr(dato, 'id'):
+            return getattr(dato, 'id')
+        if hasattr(dato, 'identificador'):
+            return getattr(dato, 'identificador')
+        if hasattr(dato, 'composite_key') and hasattr(dato.composite_key, 'I'):
+            return dato.composite_key.I
+        if isinstance(dato, int):
+            return dato
+        return None
 
     def set_modo(self, modo: OperationalMode) -> None:
         """
@@ -243,10 +259,11 @@ class ArbolAVL:
         """
         Inserta un nuevo elemento en el AVL ordenado por su Clave Compuesta K.
         Inserts a new element into AVL ordered by its Composite Key K.
+        Registra la referencia en self.indice_por_id para búsquedas instantáneas O(1).
         """
-        if hasattr(dato, 'id'):
-            if self.buscar_por_id(dato.id) is not None:
-                raise EventAlreadyExistsException(dato.id)
+        ev_id = self._extraer_id(dato)
+        if ev_id is not None and self.buscar_por_id(ev_id) is not None:
+            raise EventAlreadyExistsException(ev_id)
 
         nodo = NodoAVL(dato)
 
@@ -254,22 +271,28 @@ class ArbolAVL:
             self.raiz = nodo
             nodo.setPadre(None)
             self._actualizarAltura(nodo)
+            if ev_id is not None:
+                self.indice_por_id[ev_id] = nodo
             return True
 
         insertado = self._insertar_recursivo(nodo, self.raiz)
+        if insertado and ev_id is not None:
+            self.indice_por_id[ev_id] = nodo
         return insertado
 
     def _insertar_recursivo(self, nodo: NodoAVL, raizActual: NodoAVL) -> bool:
         clave_nodo = getattr(nodo.getValor(), 'composite_key', nodo.getValor())
         clave_actual = getattr(raizActual.getValor(), 'composite_key', raizActual.getValor())
 
+        id_nodo = self._extraer_id(nodo.getValor())
+        id_actual = self._extraer_id(raizActual.getValor())
+
         # Validar identificador único / Validate unique ID
-        if hasattr(nodo.getValor(), 'id') and hasattr(raizActual.getValor(), 'id'):
-            if nodo.getValor().id == raizActual.getValor().id:
-                raise EventAlreadyExistsException(nodo.getValor().id)
+        if id_nodo is not None and id_actual is not None and id_nodo == id_actual:
+            raise EventAlreadyExistsException(id_nodo)
 
         if clave_nodo == clave_actual:
-            raise EventAlreadyExistsException(getattr(nodo.getValor(), 'id', 0))
+            raise EventAlreadyExistsException(id_nodo if id_nodo is not None else 0)
 
         if clave_nodo < clave_actual:
             izq = raizActual.getHijoIzquierdo()
@@ -295,16 +318,30 @@ class ArbolAVL:
     # --------------------------------------------------
     def buscar_por_id(self, event_id: int) -> Optional[NodoAVL]:
         """
-        Busca un nodo en el AVL por su ID entero / Searches node in AVL by integer ID
+        Busca un nodo en el AVL por su ID entero en tiempo O(1) promedio
+        utilizando la estructura auxiliar Hash Map (self.indice_por_id).
+        Cumple estrictamente con el principio de desacoplamiento entre el orden
+        del árbol y la eficiencia de recuperación por identificador.
+
+        Searches for an AVL node by integer ID in O(1) average time using
+        the auxiliary Hash Map structure (self.indice_por_id).
+        Strictly satisfies decoupling between tree order and ID retrieval.
         """
-        if self.raiz is None:
-            return None
-        return self._buscar_id_recursivo(self.raiz, event_id)
+        # Búsqueda instantánea O(1) en el índice en memoria / Instant O(1) lookup in memory index
+        if event_id in self.indice_por_id:
+            return self.indice_por_id[event_id]
+        
+        # Fallback de seguridad en caso de desincronización / Safety fallback if out of sync
+        nodo = self._buscar_id_recursivo(self.raiz, event_id)
+        if nodo is not None:
+            self.indice_por_id[event_id] = nodo
+        return nodo
 
     def _buscar_id_recursivo(self, nodo: Optional[NodoAVL], event_id: int) -> Optional[NodoAVL]:
         if nodo is None:
             return None
-        if hasattr(nodo.getValor(), 'id') and nodo.getValor().id == event_id:
+        nodo_id = self._extraer_id(nodo.getValor())
+        if nodo_id is not None and nodo_id == event_id:
             return nodo
         
         izq = self._buscar_id_recursivo(nodo.getHijoIzquierdo(), event_id)
@@ -334,6 +371,7 @@ class ArbolAVL:
     def eliminar_por_id(self, event_id: int) -> bool:
         """
         Elimina un nodo del AVL por su ID / Deletes node from AVL by ID
+        Garantiza sincronización total de self.indice_por_id.
         """
         nodo = self.buscar_por_id(event_id)
         if nodo is None:
@@ -351,7 +389,10 @@ class ArbolAVL:
         """
         Eliminación física del nodo adaptado de 2_árbol_avl.py
         Physical node deletion adapted from 2_árbol_avl.py
+        Manteniendo sincronizado el índice auxiliar hash self.indice_por_id.
         """
+        ev_id = self._extraer_id(nodo.getValor())
+
         # CASO 1: Es hoja / Is leaf
         if nodo.getHijoIzquierdo() is None and nodo.getHijoDerecho() is None:
             padre = nodo.getPadre()
@@ -363,6 +404,8 @@ class ArbolAVL:
                 else:
                     padre.setHijoDerecho(None)
             nodo.setPadre(None)
+            if ev_id is not None:
+                self.indice_por_id.pop(ev_id, None)
             return
 
         # CASO 2: Solamente hijo derecho / Only right child
@@ -380,6 +423,8 @@ class ArbolAVL:
                 if hijo: hijo.setPadre(padre)
             nodo.setPadre(None)
             nodo.setHijoDerecho(None)
+            if ev_id is not None:
+                self.indice_por_id.pop(ev_id, None)
             return
 
         # CASO 2: Solamente hijo izquierdo / Only left child
@@ -397,11 +442,22 @@ class ArbolAVL:
                 if hijo: hijo.setPadre(padre)
             nodo.setPadre(None)
             nodo.setHijoIzquierdo(None)
+            if ev_id is not None:
+                self.indice_por_id.pop(ev_id, None)
             return
 
         # CASO 3: Dos hijos (reemplazar por predecesor) / Two children (replace by predecessor)
         predecesor = self._getPredecesor(nodo)
+        id_anterior = ev_id
+        id_predecesor = self._extraer_id(predecesor.getValor())
+
+        # Copiar valor del predecesor al nodo actual
         nodo.setValor(predecesor.getValor())
+        if id_predecesor is not None:
+            self.indice_por_id[id_predecesor] = nodo
+        if id_anterior is not None and id_anterior != id_predecesor:
+            self.indice_por_id.pop(id_anterior, None)
+
         self._eliminar_nodo(predecesor)
 
     def _getPredecesor(self, nodo: NodoAVL) -> NodoAVL:
@@ -409,6 +465,30 @@ class ArbolAVL:
         while actual.getHijoDerecho() is not None:
             actual = actual.getHijoDerecho()
         return actual
+
+    def _reindexar_ids(self) -> None:
+        """
+        Reconstruye el índice hash auxiliar por ID en memoria O(N).
+        Rebuilds the auxiliary in-memory hash map index by ID O(N).
+        """
+        self.indice_por_id.clear()
+        def _recorrer(n: Optional[NodoAVL]):
+            if n is not None:
+                ev_id = self._extraer_id(n.getValor())
+                if ev_id is not None:
+                    self.indice_por_id[ev_id] = n
+                _recorrer(n.getHijoIzquierdo())
+                _recorrer(n.getHijoDerecho())
+        _recorrer(self.raiz)
+
+    def vaciar(self) -> None:
+        """
+        Vacía completamente el árbol AVL y el índice auxiliar.
+        Completely clears the AVL tree and the auxiliary hash index.
+        """
+        self.raiz = None
+        self.indice_por_id.clear()
+        self._nodos_desbalanceados.clear()
 
     # --------------------------------------------------
     # OPERACIONES ESPECIALES / SPECIAL OPERATIONS
@@ -427,6 +507,7 @@ class ArbolAVL:
 
         self.raiz = _balancear_subarbol(self.raiz)
         self._nodos_desbalanceados.clear()
+        self._reindexar_ids()
 
     def podar_por_prioridad(self, prioridad_minima: int) -> List[Any]:
         """

@@ -7,11 +7,38 @@ import {
 } from 'lucide-react';
 
 /**
- * Componente de Nodo Recursivo en Soft UI
+ * Temas visuales por nivel de prioridad sísmica
+ */
+const PRIORITY_THEMES = {
+  1: {
+    bgBadge: 'var(--p1-bg)',
+    textBadge: 'var(--p1-text)',
+    borderBadge: 'var(--p1-border)',
+    cardBorder: '#FCA5A5',
+    cardShadow: 'rgba(239, 68, 68, 0.08)'
+  },
+  2: {
+    bgBadge: 'var(--p2-bg)',
+    textBadge: 'var(--p2-text)',
+    borderBadge: 'var(--p2-border)',
+    cardBorder: '#FCD34D',
+    cardShadow: 'rgba(245, 158, 11, 0.08)'
+  },
+  3: {
+    bgBadge: 'var(--p3-bg)',
+    textBadge: 'var(--p3-text)',
+    borderBadge: 'var(--p3-border)',
+    cardBorder: '#6EE7B7',
+    cardShadow: 'rgba(16, 185, 129, 0.08)'
+  }
+};
+
+/**
+ * Componente de Nodo Recursivo en Soft UI Ultra-Optimizado (Memoizado a 60 FPS)
  * Soporta renderizado adaptativo para Árbol AVL y Árbol BST estándar,
  * con resaltado en tiempo real según búsqueda en el mapa.
  */
-function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = null, treeType = 'AVL', searchQuery = '' }) {
+const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = null, treeType = 'AVL', searchQuery = '' }) {
   if (!node || !node.valor) return null;
 
   const ev = node.valor;
@@ -28,36 +55,7 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
     (ev.estacion_id && ev.estacion_id.toLowerCase().includes(searchQuery.trim().toLowerCase()))
   );
 
-  // Estilos pasteles para prioridades
-  const priorityTheme = (p) => {
-    if (p === 1) {
-      return {
-        bgBadge: 'var(--p1-bg)',
-        textBadge: 'var(--p1-text)',
-        borderBadge: 'var(--p1-border)',
-        cardBorder: '#FCA5A5',
-        cardShadow: 'rgba(239, 68, 68, 0.08)'
-      };
-    }
-    if (p === 2) {
-      return {
-        bgBadge: 'var(--p2-bg)',
-        textBadge: 'var(--p2-text)',
-        borderBadge: 'var(--p2-border)',
-        cardBorder: '#FCD34D',
-        cardShadow: 'rgba(245, 158, 11, 0.08)'
-      };
-    }
-    return {
-      bgBadge: 'var(--p3-bg)',
-      textBadge: 'var(--p3-text)',
-      borderBadge: 'var(--p3-border)',
-      cardBorder: '#6EE7B7',
-      cardShadow: 'rgba(16, 185, 129, 0.08)'
-    };
-  };
-
-  const theme = priorityTheme(p);
+  const theme = PRIORITY_THEMES[p] || PRIORITY_THEMES[3];
 
   return (
     <div style={{
@@ -174,7 +172,7 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
           {mag} <span style={{ fontSize: '0.74rem', color: 'var(--accent)', fontWeight: 700 }}>M</span>
         </div>
 
-        {/* Clave Compuesta K = [M, P, I] */}
+        {/* Clave Compuesta K = (P, M, I) */}
         <div style={{
           fontFamily: 'var(--font-mono)',
           fontSize: '0.68rem',
@@ -186,7 +184,7 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
           border: '1px solid var(--border-subtle)',
           margin: '2px 0'
         }}>
-          K=({mag}M, P{p}, #{ev.id})
+          K=(P{p}, {mag}M, #{ev.id})
         </div>
 
         {/* Identificador y Altura */}
@@ -263,7 +261,7 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
 
     </div>
   );
-}
+});
 
 /**
  * Visualizador Topológico en Pantalla Completa
@@ -297,10 +295,20 @@ export default function AVLVisualizer({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const rAFRef = useRef(null);
 
   const mapContainerRef = useRef(null);
 
-  // Manejo de Arrastre y Paneo (Pan & Drag)
+  // Debouncing de búsqueda para no sobrecargar el renderizado del árbol en cada tecla
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Manejo de Arrastre y Paneo (Pan & Drag) optimizado con rAF (60 FPS fluidos)
   const handleMouseDown = (e) => {
     // Si se hace clic en un botón, input o nodo, no activar arrastre del mapa
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.avl-node-card')) {
@@ -315,15 +323,24 @@ export default function AVLVisualizer({
 
   const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
+    const nextX = e.clientX - dragStart.x;
+    const nextY = e.clientY - dragStart.y;
+    if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
+    rAFRef.current = requestAnimationFrame(() => {
+      setPan({ x: nextX, y: nextY });
     });
   }, [isDragging, dragStart]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
+    if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
     setIsDragging(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rAFRef.current) cancelAnimationFrame(rAFRef.current);
+    };
+  }, []);
 
   // Manejo directo de Zoom con la Rueda del Ratón (Scroll = Zoom directo tipo Figma/Maps)
   useEffect(() => {
@@ -372,7 +389,7 @@ export default function AVLVisualizer({
     }}>
 
       {/* ========================================================================= */}
-      {/* 1. ESQUINA SUPERIOR IZQUIERDA: IDENTIDAD, MODO OPERACIONAL Y ALTURAS     */}
+      {/* 1. BLOQUE IZQUIERDO: IDENTIDAD Y ESTADO OPERATIVO                         */}
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
@@ -381,10 +398,10 @@ export default function AVLVisualizer({
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '9px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '5px 11px',
+        padding: '5px 12px',
         borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
@@ -412,9 +429,9 @@ export default function AVLVisualizer({
           </div>
         </div>
 
-        <div style={{ height: '20px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
-        {/* Conmutador de Modo Operacional (NORMAL <-> STRESS) */}
+        {/* Indicador del Modo (Normal / Estrés) */}
         <button
           onClick={onToggleMode}
           className="btn-secondary"
@@ -425,64 +442,39 @@ export default function AVLVisualizer({
             borderRadius: '7px',
             backgroundColor: currentMode === 'NORMAL' ? 'var(--p3-bg)' : 'var(--p1-bg)',
             color: currentMode === 'NORMAL' ? 'var(--p3-text)' : 'var(--p1-text)',
-            border: `1px solid ${currentMode === 'NORMAL' ? 'var(--p3-border)' : 'var(--p1-border)'}`
+            border: `1px solid ${currentMode === 'NORMAL' ? 'var(--p3-border)' : 'var(--p1-border)'}`,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            cursor: 'pointer'
           }}
-          title="Clic para alternar entre balance inmediato (NORMAL) y balance diferido (STRESS)"
+          title="Alternar entre balance inmediato (NORMAL) y balance diferido (ESTRÉS)"
         >
           <Activity size={11} />
-          <span>{currentMode}</span>
+          <span>Estado: {currentMode}</span>
         </button>
-
-        {/* Indicadores en Vivo de Altura */}
-        <span style={{
-          fontSize: '0.68rem',
-          fontWeight: 800,
-          padding: '3px 7px',
-          borderRadius: '6px',
-          backgroundColor: '#F1F5F9',
-          color: 'var(--text-secondary)'
-        }}>
-          AVL: <strong>h={avlHeight}</strong> • BST: <strong>h={bstHeight}</strong>
-        </span>
 
         <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
-        {/* Reloj de Simulación Explícito (UTC) */}
-        <button
-          onClick={onOpenClockModal}
-          className="btn-secondary"
-          style={{
-            padding: '3px 8px',
-            fontSize: '0.68rem',
-            fontWeight: 800,
-            borderRadius: '6px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontFamily: 'var(--font-mono)',
-            backgroundColor: '#EEF2FF',
-            color: 'var(--accent)',
-            borderColor: '#C7D2FE'
-          }}
-          title="Ver y ajustar el Reloj de Simulación del escenario (UTC)"
-        >
-          <Clock size={12} style={{ color: 'var(--accent)' }} />
-          <span>{simulationClock ? simulationClock.replace('2026-', '').replace('Z', ' UTC') : '12:00 UTC'}</span>
-        </button>
-
-        {/* Botón de Sincronización / Refrescar */}
-        <button
-          onClick={onRefresh}
-          className="btn-secondary"
-          style={{ padding: '4px 7px', border: 'none', background: '#F1F5F9', borderRadius: '6px' }}
-          title="Sincronizar y recargar estado del sistema"
-        >
-          <RefreshCw size={13} className={loading ? 'spin-animation' : ''} style={{ color: 'var(--text-secondary)' }} />
-        </button>
+        {/* Métricas Rápidas del Árbol */}
+        <span style={{
+          fontSize: '0.68rem',
+          fontWeight: 800,
+          padding: '3px 8px',
+          borderRadius: '6px',
+          backgroundColor: '#F1F5F9',
+          color: 'var(--text-secondary)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px'
+        }}>
+          <Layers size={11} style={{ color: 'var(--accent)' }} />
+          <span>AVL: <strong>h={avlHeight}</strong> · BST: <strong>h={bstHeight}</strong></span>
+        </span>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. CENTRO SUPERIOR: SELECTOR DE VISTA DE ÁRBOLES Y BÚSQUEDA RÁPIDA       */}
+      {/* 2. BLOQUE CENTRAL: RELOJ DE SIMULACIÓN Y FILTROS DE VISUALIZACIÓN         */}
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
@@ -492,15 +484,52 @@ export default function AVLVisualizer({
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '9px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '4px 9px',
+        padding: '4px 10px',
         borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
       }}>
-        {/* Selector de Árboles (Segmented Controls) */}
+        {/* Reloj de Simulación UTC + Sincronización */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <button
+            onClick={onOpenClockModal}
+            className="btn-secondary"
+            style={{
+              padding: '4px 8px',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontFamily: 'var(--font-mono)',
+              backgroundColor: '#EEF2FF',
+              color: 'var(--accent)',
+              borderColor: '#C7D2FE',
+              cursor: 'pointer'
+            }}
+            title="Ajustar o avanzar el Reloj de Simulación (UTC)"
+          >
+            <Clock size={12} style={{ color: 'var(--accent)' }} />
+            <span>{simulationClock ? simulationClock.replace('2026-', '').replace('Z', ' UTC') : '12:00:00 UTC'}</span>
+          </button>
+
+          <button
+            onClick={onRefresh}
+            className="btn-secondary"
+            style={{ padding: '4px 6px', border: 'none', background: '#F1F5F9', borderRadius: '6px', cursor: 'pointer' }}
+            title="Sincronizar y recargar estado del sistema"
+          >
+            <RefreshCw size={12} className={loading ? 'spin-animation' : ''} style={{ color: 'var(--text-secondary)' }} />
+          </button>
+        </div>
+
+        <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Selector de Vista: Ambos (Dual) | Solo AVL | Solo BST */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -573,7 +602,9 @@ export default function AVLVisualizer({
           </button>
         </div>
 
-        {/* Campo de Búsqueda de Nodos en Vivo */}
+        <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Barra de Búsqueda Global por ID / Magnitud */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -611,7 +642,7 @@ export default function AVLVisualizer({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. ESQUINA SUPERIOR DERECHA: ACCIONES PRIMARIAS DE INGESTA                */}
+      {/* 3. BLOQUE DERECHO: ACCIONES CRÍTICAS (PRINCIPALES)                         */}
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
@@ -628,17 +659,18 @@ export default function AVLVisualizer({
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
       }}>
-        {/* + Nuevo Sismo */}
+        {/* Deshacer (Undo LIFO) */}
         <button
-          onClick={onOpenCreateModal}
-          className="btn-primary"
-          style={{ padding: '6px 11px', fontSize: '0.76rem', fontWeight: 700 }}
+          onClick={onUndo}
+          className="btn-secondary"
+          style={{ padding: '6px 10px', fontSize: '0.74rem', fontWeight: 600 }}
+          title="Revertir la última acción mediante la Pila LIFO"
         >
-          <PlusCircle size={14} />
-          <span>+ Nuevo Sismo</span>
+          <Undo2 size={13} />
+          <span>Deshacer</span>
         </button>
 
-        {/* Catálogo Rápido Predefinidos */}
+        {/* Sismos Predefinidos */}
         <button
           onClick={onOpenPresetsModal}
           className="btn-secondary"
@@ -656,15 +688,14 @@ export default function AVLVisualizer({
           <span>Sismos Predefinidos</span>
         </button>
 
-        {/* Deshacer (Undo LIFO) */}
+        {/* + Nuevo Sismo */}
         <button
-          onClick={onUndo}
-          className="btn-secondary"
-          style={{ padding: '6px 10px', fontSize: '0.74rem', fontWeight: 600 }}
-          title="Revertir la última acción mediante la Pila LIFO"
+          onClick={onOpenCreateModal}
+          className="btn-primary"
+          style={{ padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700 }}
         >
-          <Undo2 size={13} />
-          <span>Deshacer</span>
+          <PlusCircle size={14} />
+          <span>+ Nuevo Sismo</span>
         </button>
       </div>
 
@@ -848,7 +879,6 @@ export default function AVLVisualizer({
           backgroundColor: '#F8FAFC',
           backgroundImage: 'radial-gradient(circle, #CBD5E1 1.2px, transparent 1.2px)',
           backgroundSize: '24px 24px',
-          backgroundPosition: `${pan.x}px ${pan.y}px`,
           cursor: isDragging ? 'grabbing' : 'grab',
           display: 'flex',
           alignItems: 'center',
@@ -857,9 +887,10 @@ export default function AVLVisualizer({
       >
         {/* Superficie Transformable de los Árboles en el Centro */}
         <div style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
           transformOrigin: 'center center',
-          transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+          transition: isDragging ? 'none' : 'transform 0.12s cubic-bezier(0.2, 0, 0, 1)',
+          willChange: isDragging ? 'transform' : 'auto',
           display: 'inline-flex',
           justifyContent: 'center',
           alignItems: 'flex-start',
@@ -949,7 +980,7 @@ export default function AVLVisualizer({
                           isRoot={true}
                           onSelectNode={onSelectEvent}
                           treeType="AVL"
-                          searchQuery={searchQuery}
+                          searchQuery={debouncedSearch}
                         />
                       ) : (
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', alignSelf: 'center' }}>AVL Vacío</span>
@@ -1010,7 +1041,7 @@ export default function AVLVisualizer({
                           isRoot={true}
                           onSelectNode={onSelectEvent}
                           treeType="BST"
-                          searchQuery={searchQuery}
+                          searchQuery={debouncedSearch}
                         />
                       ) : (
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', alignSelf: 'center' }}>BST Vacío</span>
@@ -1075,7 +1106,7 @@ export default function AVLVisualizer({
                       isRoot={true}
                       onSelectNode={onSelectEvent}
                       treeType="AVL"
-                      searchQuery={searchQuery}
+                      searchQuery={debouncedSearch}
                     />
                   ) : (
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '40px 0' }}>Árbol AVL Vacío</span>
@@ -1138,7 +1169,7 @@ export default function AVLVisualizer({
                       isRoot={true}
                       onSelectNode={onSelectEvent}
                       treeType="BST"
-                      searchQuery={searchQuery}
+                      searchQuery={debouncedSearch}
                     />
                   ) : (
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '40px 0' }}>Árbol BST Vacío</span>

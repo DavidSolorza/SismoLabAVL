@@ -2,95 +2,11 @@
   "version": "1.0.0",
   "exported_at": "data_snapshot.json",
   "avl_metadata": {
-    "total_nodes": 17,
-    "height": 4,
+    "total_nodes": 3,
+    "height": 1,
     "mode": "NORMAL"
   },
   "events": [
-    {
-      "id": 9406,
-      "formatted_id": "SIS-009406",
-      "prioridad": 2,
-      "magnitud": 3.8,
-      "profundidad": 7.9,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-ARMENIA-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:36:04.912868Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 3.8,
-        "I": 9406,
-        "formatted_id": "SIS-009406"
-      }
-    },
-    {
-      "id": 1003,
-      "formatted_id": "SIS-001003",
-      "prioridad": 2,
-      "magnitud": 4.1,
-      "profundidad": 45.0,
-      "coordenadas": {
-        "latitude": 4.53389,
-        "longitude": -75.68111
-      },
-      "estacion_id": "EST-ARMENIA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:06:00.754896Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 4.1,
-        "I": 1003,
-        "formatted_id": "SIS-001003"
-      }
-    },
-    {
-      "id": 8630,
-      "formatted_id": "SIS-008630",
-      "prioridad": 2,
-      "magnitud": 4.3,
-      "profundidad": 29.1,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.657369Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 4.3,
-        "I": 8630,
-        "formatted_id": "SIS-008630"
-      }
-    },
-    {
-      "id": 9504,
-      "formatted_id": "SIS-009504",
-      "prioridad": 2,
-      "magnitud": 4.9,
-      "profundidad": 49.1,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-ARMENIA-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:39:16.667704Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 4.9,
-        "I": 9504,
-        "formatted_id": "SIS-009504"
-      }
-    },
     {
       "id": 1002,
       "formatted_id": "SIS-001002",
@@ -103,160 +19,13 @@
       },
       "estacion_id": "EST-PEREIRA-01",
       "zona_poblada": true,
-      "timestamp": "2026-09-22T04:06:00.754888Z",
+      "timestamp": "2026-09-22T11:15:00Z",
       "estado": "ACTIVO",
       "clave_k": {
         "P": 1,
         "M": 5.2,
         "I": 1002,
         "formatted_id": "SIS-001002"
-      }
-    },
-    {
-      "id": 2957,
-      "formatted_id": "SIS-002957",
-      "prioridad": 2,
-      "magnitud": 5.3,
-      "profundidad": 49.9,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-MANIZALES-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:39:16.678906Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 5.3,
-        "I": 2957,
-        "formatted_id": "SIS-002957"
-      }
-    },
-    {
-      "id": 5397,
-      "formatted_id": "SIS-005397",
-      "prioridad": 2,
-      "magnitud": 5.3,
-      "profundidad": 18.9,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-ARMENIA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.660291Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 5.3,
-        "I": 5397,
-        "formatted_id": "SIS-005397"
-      }
-    },
-    {
-      "id": 7433,
-      "formatted_id": "SIS-007433",
-      "prioridad": 2,
-      "magnitud": 5.6,
-      "profundidad": 36.0,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.646910Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 5.6,
-        "I": 7433,
-        "formatted_id": "SIS-007433"
-      }
-    },
-    {
-      "id": 2960,
-      "formatted_id": "SIS-002960",
-      "prioridad": 2,
-      "magnitud": 5.8,
-      "profundidad": 42.1,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:36:04.907368Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 5.8,
-        "I": 2960,
-        "formatted_id": "SIS-002960"
-      }
-    },
-    {
-      "id": 3614,
-      "formatted_id": "SIS-003614",
-      "prioridad": 2,
-      "magnitud": 5.9,
-      "profundidad": 12.6,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.663760Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 2,
-        "M": 5.9,
-        "I": 3614,
-        "formatted_id": "SIS-003614"
-      }
-    },
-    {
-      "id": 6141,
-      "formatted_id": "SIS-006141",
-      "prioridad": 1,
-      "magnitud": 6.0,
-      "profundidad": 25.6,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.683335Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 1,
-        "M": 6.0,
-        "I": 6141,
-        "formatted_id": "SIS-006141"
-      }
-    },
-    {
-      "id": 4099,
-      "formatted_id": "SIS-004099",
-      "prioridad": 1,
-      "magnitud": 6.1,
-      "profundidad": 37.4,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:36:04.891981Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 1,
-        "M": 6.1,
-        "I": 4099,
-        "formatted_id": "SIS-004099"
       }
     },
     {
@@ -271,7 +40,7 @@
       },
       "estacion_id": "EST-MANIZALES-01",
       "zona_poblada": true,
-      "timestamp": "2026-09-22T04:06:00.754872Z",
+      "timestamp": "2026-09-22T10:00:00Z",
       "estado": "ACTIVO",
       "clave_k": {
         "P": 1,
@@ -281,87 +50,24 @@
       }
     },
     {
-      "id": 9426,
-      "formatted_id": "SIS-009426",
-      "prioridad": 1,
-      "magnitud": 6.7,
-      "profundidad": 22.7,
+      "id": 1003,
+      "formatted_id": "SIS-001003",
+      "prioridad": 2,
+      "magnitud": 4.1,
+      "profundidad": 45.0,
       "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-ARMENIA-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:39:16.670624Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 1,
-        "M": 6.7,
-        "I": 9426,
-        "formatted_id": "SIS-009426"
-      }
-    },
-    {
-      "id": 5790,
-      "formatted_id": "SIS-005790",
-      "prioridad": 1,
-      "magnitud": 6.8,
-      "profundidad": 27.0,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-PEREIRA-01",
-      "zona_poblada": false,
-      "timestamp": "2026-09-22T04:39:16.676566Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 1,
-        "M": 6.8,
-        "I": 5790,
-        "formatted_id": "SIS-005790"
-      }
-    },
-    {
-      "id": 6211,
-      "formatted_id": "SIS-006211",
-      "prioridad": 1,
-      "magnitud": 6.9,
-      "profundidad": 48.9,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
+        "latitude": 4.53389,
+        "longitude": -75.68111
       },
       "estacion_id": "EST-ARMENIA-01",
       "zona_poblada": false,
-      "timestamp": "2026-09-22T04:36:04.910402Z",
+      "timestamp": "2026-09-22T11:50:00Z",
       "estado": "ACTIVO",
       "clave_k": {
-        "P": 1,
-        "M": 6.9,
-        "I": 6211,
-        "formatted_id": "SIS-006211"
-      }
-    },
-    {
-      "id": 9940,
-      "formatted_id": "SIS-009940",
-      "prioridad": 1,
-      "magnitud": 7.0,
-      "profundidad": 26.1,
-      "coordenadas": {
-        "latitude": 5.06889,
-        "longitude": -75.51738
-      },
-      "estacion_id": "EST-MANIZALES-01",
-      "zona_poblada": true,
-      "timestamp": "2026-09-22T04:39:16.673637Z",
-      "estado": "ACTIVO",
-      "clave_k": {
-        "P": 1,
-        "M": 7.0,
-        "I": 9940,
-        "formatted_id": "SIS-009940"
+        "P": 2,
+        "M": 4.1,
+        "I": 1003,
+        "formatted_id": "SIS-001003"
       }
     }
   ]

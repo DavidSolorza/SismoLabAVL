@@ -47,8 +47,24 @@ class CompositeKeyK:
         return self._P
 
     @property
+    def prioridad(self) -> int:
+        return self._P
+
+    @property
+    def priority(self) -> int:
+        return self._P
+
+    @property
     def M(self) -> float:
         """Magnitud sísmica / Seismic magnitude"""
+        return self._M
+
+    @property
+    def magnitud(self) -> float:
+        return self._M
+
+    @property
+    def magnitude(self) -> float:
         return self._M
 
     @property
@@ -56,47 +72,56 @@ class CompositeKeyK:
         """Identificador único / Unique identifier"""
         return self._I
 
+    @property
+    def identificador(self) -> int:
+        return self._I
+
+    @property
+    def identifier(self) -> int:
+        return self._I
+
     def formatted_id(self) -> str:
         """Formato visual / Visual string representation: SIS-XXXXXX"""
         return f"SIS-{self._I:06d}"
 
-    def __lt__(self, other: 'CompositeKeyK') -> bool:
-        if not isinstance(other, CompositeKeyK):
-            return NotImplemented
-        
-        # Criterio 1 (Principal): Magnitud numérica M (menor va a la izquierda <, mayor a la derecha >)
-        # Criterion 1 (Primary): Numerical magnitude M (smaller goes left <, greater goes right >)
-        if self._M != other._M:
-            return self._M < other._M
-        
-        # Criterio 2: Identificador único I para desempate si tienen la misma magnitud
-        # Criterion 2: Unique ID I to break ties if magnitudes are identical
-        if self._I != other._I:
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, CompositeKeyK):
+            # 1. Primero compara la Prioridad (P):
+            if self._P != other._P:
+                return self._P < other._P
+            
+            # 2. Si las prioridades empatan: Magnitud numérica (M)
+            if self._M != other._M:
+                return self._M < other._M
+            
+            # 3. Si prioridad y magnitud empatan: Identificador numérico único (I)
             return self._I < other._I
-        
-        # Criterio 3: Prioridad P
-        return self._P < other._P
+        elif isinstance(other, (tuple, list)) and len(other) == 3:
+            return (self._P, self._M, self._I) < (other[0], round(float(other[1]), 1), int(other[2]))
+        return NotImplemented
 
     def __repr__(self) -> str:
         return f"K(P={self._P}, M={self._M:.1f}, I={self._I})"
 
     def __str__(self) -> str:
-        return f"K=[M:{self._M:.1f}, P:{self._P}, I:{self._I}]"
+        return f"K=[P:{self._P}, M:{self._M:.1f}, I:{self._I}]"
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, CompositeKeyK):
-            return False
-        return (self._M == other._M) and (self._I == other._I) and (self._P == other._P)
+        if isinstance(other, CompositeKeyK):
+            return (self._P == other._P) and (self._M == other._M) and (self._I == other._I)
+        elif isinstance(other, (tuple, list)) and len(other) == 3:
+            return (self._P, self._M, self._I) == (other[0], round(float(other[1]), 1), int(other[2]))
+        return False
 
-    def __gt__(self, other: 'CompositeKeyK') -> bool:
-        if not isinstance(other, CompositeKeyK):
+    def __gt__(self, other: Any) -> bool:
+        if not isinstance(other, (CompositeKeyK, tuple, list)):
             return NotImplemented
         return not (self < other or self == other)
 
-    def __le__(self, other: 'CompositeKeyK') -> bool:
+    def __le__(self, other: Any) -> bool:
         return self < other or self == other
 
-    def __ge__(self, other: 'CompositeKeyK') -> bool:
+    def __ge__(self, other: Any) -> bool:
         return self > other or self == other
 
     def to_dict(self) -> Dict[str, Any]:
@@ -108,5 +133,6 @@ class CompositeKeyK:
             "formatted_id": self.formatted_id()
         }
 
-    def __repr__(self) -> str:
-        return f"ClaveK(P={self._P}, M={self._M}, I={self.formatted_id()})"
+# Alias semántico directo para interoperabilidad idiomática
+ClaveK = CompositeKeyK
+

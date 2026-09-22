@@ -18,6 +18,7 @@ import {
   createEvent, correctEvent, enqueueReport, processNextReport, undoLastAction, archiveBranch,
   setOperationalMode, clearAllTree, setSimulationClock, advanceSimulationClock
 } from './services/apiService';
+import { busService, BUS_EVENTS } from './services/busService';
 import { getAvailableId } from './data/predefinedEvents';
 
 export default function App() {
@@ -50,11 +51,11 @@ export default function App() {
     setToast({ message, type, ...options });
   };
 
-  // Carga atómica y optimizada del estado completo en una sola llamada HTTP
-  const loadData = useCallback(async () => {
+  // Carga atómica y optimizada del estado completo mediante el Bus Service y Caché
+  const loadData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     try {
-      const data = await fetchFullDashboardState();
+      const data = await fetchFullDashboardState(forceRefresh);
       setMetrics(data.metricas);
       setEvents(data.eventos || []);
       setTreeData(data.avl_tree);
@@ -63,23 +64,9 @@ export default function App() {
         setSimulationClockState(data.reloj_simulacion);
       }
     } catch (err) {
-      // Fallback de contingencia a consultas paralelas separadas si el endpoint unificado fallase
-      try {
-        const [m, evs, tree, bst] = await Promise.all([
-          fetchMetrics(),
-          fetchEvents(),
-          fetchTreeHierarchy(),
-          fetchBstHierarchy()
-        ]);
-        setMetrics(m);
-        setEvents(evs);
-        setTreeData(tree);
-        setBstData(bst);
-      } catch (fallbackErr) {
-        showToast(fallbackErr.message || 'Error al conectar con el backend SismoLab', 'error', {
-          title: 'Error de Comunicación'
-        });
-      }
+      showToast(err.message || 'Error al conectar con el backend SismoLab', 'error', {
+        title: 'Error de Comunicación'
+      });
     } finally {
       setLoading(false);
     }
@@ -87,6 +74,30 @@ export default function App() {
 
   useEffect(() => {
     loadData();
+
+    // Suscripción a eventos del Bus de Datos para reactividad instantánea
+    const unsubTreeCleared = busService.on(BUS_EVENTS.TREE_CLEARED, () => {
+      setTreeData(null);
+      setBstData(null);
+      setEvents([]);
+      setQueueItems([]);
+      setMetrics(null);
+    });
+
+    const unsubDataUpdated = busService.on(BUS_EVENTS.SYSTEM_DATA_UPDATED, (data) => {
+      if (data) {
+        if (data.metricas) setMetrics(data.metricas);
+        if (data.eventos) setEvents(data.eventos);
+        if (data.avl_tree !== undefined) setTreeData(data.avl_tree);
+        if (data.bst_tree !== undefined) setBstData(data.bst_tree);
+        if (data.reloj_simulacion) setSimulationClockState(data.reloj_simulacion);
+      }
+    });
+
+    return () => {
+      unsubTreeCleared();
+      unsubDataUpdated();
+    };
   }, [loadData]);
 
   // Conmutador de Modo Operacional (NORMAL <-> STRESS)
@@ -256,11 +267,19 @@ export default function App() {
         onConfirm: async () => {
           try {
             const res = await clearAllTree(false);
+            // Purga absoluta e inmediata de todo el caché en memoria y web storage
+            busService.clearAllCache();
             setQueueItems([]);
-            showToast(res.message || 'Árbol vaciado exitosamente (0 nodos)', 'success', {
-              title: 'Árboles Reiniciados'
-            });
-            loadData();
+            setTreeData(null);
+            setBstData(null);
+            setEvents([]);
+            setMetrics(null);
+            showToast(
+              'Árboles vaciados exitosamente. El caché en memoria ha sido purgado al 100% para máxima fluidez.',
+              'success',
+              { title: 'Árboles y Caché Reiniciados' }
+            );
+            loadData(true);
           } catch (err) {
             showToast(err.message, 'error', { title: 'Error al Vaciar' });
           }

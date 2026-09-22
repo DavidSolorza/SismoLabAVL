@@ -1,7 +1,27 @@
-import React from 'react';
-import { Layers, ShieldCheck, Zap, BarChart3, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Layers, ShieldCheck, Zap, BarChart3, AlertTriangle, Cpu } from 'lucide-react';
+import { busService, BUS_EVENTS } from '../services/busService';
 
 export default function MetricsBanner({ metrics }) {
+  const [cacheStats, setCacheStats] = useState(() => busService.getCacheStats());
+
+  useEffect(() => {
+    const updateStats = () => setCacheStats(busService.getCacheStats());
+    updateStats();
+
+    const unsubData = busService.on(BUS_EVENTS.SYSTEM_DATA_UPDATED, updateStats);
+    const unsubPurge = busService.on(BUS_EVENTS.CACHE_PURGED, updateStats);
+    const unsubCleared = busService.on(BUS_EVENTS.TREE_CLEARED, updateStats);
+
+    const interval = setInterval(updateStats, 2000);
+    return () => {
+      unsubData();
+      unsubPurge();
+      unsubCleared();
+      clearInterval(interval);
+    };
+  }, []);
+
   if (!metrics) return null;
 
   const alturaAVL = metrics.altura_avl ?? 0;
@@ -140,6 +160,43 @@ export default function MetricsBanner({ metrics }) {
           <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1px' }}>
             O(log₂ N) Garantizado
           </h4>
+        </div>
+      </div>
+
+      {/* Métrica 5: Bus Service & Rendimiento de Caché */}
+      <div className="glass-panel" style={{
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '10px'
+      }}>
+        <div style={{
+          padding: '7px', borderRadius: '8px',
+          backgroundColor: '#EEF2FF',
+          color: 'var(--accent)',
+          border: '1px solid var(--accent-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <Cpu size={17} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+              Bus Service & Caché
+            </span>
+            <span style={{ fontSize: '0.64rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#ECFDF5', color: '#065F46', fontWeight: 700 }}>
+              60 FPS Fluido
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+            <span>Aciertos: <strong>{cacheStats?.hits ?? 0}</strong></span>
+            <span>•</span>
+            <span>Entradas: <strong>{cacheStats?.entriesCount ?? 0}</strong></span>
+            <span>•</span>
+            <span style={{ color: '#059669', fontWeight: 700 }}>Auto-Purga OK</span>
+          </div>
         </div>
       </div>
 

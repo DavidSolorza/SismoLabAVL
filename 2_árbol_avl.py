@@ -290,34 +290,21 @@ class ArbolBST:
   # --------------------------------------------------
 
   def preorden(self):
-
     if self.raiz is None:
-
       print("El árbol está vacío")
-
+      return []
     else:
+      resultado = []
+      self._preorden(self.raiz, resultado)
+      return resultado
 
-      self._preorden(
-        self.raiz
-      )
-
-
-  def _preorden(self, raizActual):
-
+  def _preorden(self, raizActual, resultado=None):
     if raizActual is not None:
-
-      print(
-        raizActual.getValor()
-      )
-
-      self._preorden(
-        raizActual.getHijoIzquierdo()
-      )
-
-      self._preorden(
-        raizActual.getHijoDerecho()
-      )
-
+      print(raizActual.getValor())
+      if resultado is not None:
+        resultado.append(raizActual)
+      self._preorden(raizActual.getHijoIzquierdo(), resultado)
+      self._preorden(raizActual.getHijoDerecho(), resultado)
 
   # --------------------------------------------------
   # RECORRIDO INORDEN
@@ -325,34 +312,21 @@ class ArbolBST:
   # --------------------------------------------------
 
   def inorden(self):
-
     if self.raiz is None:
-
       print("El árbol está vacío")
-
+      return []
     else:
+      resultado = []
+      self._inorden(self.raiz, resultado)
+      return resultado
 
-      self._inorden(
-        self.raiz
-      )
-
-
-  def _inorden(self, raizActual):
-
+  def _inorden(self, raizActual, resultado=None):
     if raizActual is not None:
-
-      self._inorden(
-        raizActual.getHijoIzquierdo()
-      )
-
-      print(
-        raizActual.getValor()
-      )
-
-      self._inorden(
-        raizActual.getHijoDerecho()
-      )
-
+      self._inorden(raizActual.getHijoIzquierdo(), resultado)
+      print(raizActual.getValor())
+      if resultado is not None:
+        resultado.append(raizActual)
+      self._inorden(raizActual.getHijoDerecho(), resultado)
 
   # --------------------------------------------------
   # RECORRIDO POSORDEN
@@ -360,33 +334,21 @@ class ArbolBST:
   # --------------------------------------------------
 
   def posorden(self):
-
     if self.raiz is None:
-
       print("El árbol está vacío")
-
+      return []
     else:
+      resultado = []
+      self._posorden(self.raiz, resultado)
+      return resultado
 
-      self._posorden(
-        self.raiz
-      )
-
-
-  def _posorden(self, raizActual):
-
+  def _posorden(self, raizActual, resultado=None):
     if raizActual is not None:
-
-      self._posorden(
-        raizActual.getHijoIzquierdo()
-      )
-
-      self._posorden(
-        raizActual.getHijoDerecho()
-      )
-
-      print(
-        raizActual.getValor()
-      )
+      self._posorden(raizActual.getHijoIzquierdo(), resultado)
+      self._posorden(raizActual.getHijoDerecho(), resultado)
+      print(raizActual.getValor())
+      if resultado is not None:
+        resultado.append(raizActual)
 
 
   # --------------------------------------------------
@@ -693,7 +655,7 @@ class ArbolBST:
     match(caso):
       case "LL":
         self._giroSimpleDerecha(superior)
-      case "RR"
+      case "RR":
         self._giroSimpleIzquierda(superior)
       case "LR":
         self._giroSimpleIzquierda(superior.getHijoIzquierdo())
@@ -751,4 +713,51 @@ for n in recorrido:
 recorrido = arbol.preorden()
 for n in recorrido:
   print(n.getValor())
+
+# ==============================================================================
+# EXTENSIÓN SISMOLAB AVL: CLAVE COMPUESTA K = (P, M, I) E ÍNDICE O(1)
+# Universidad de Caldas
+# ==============================================================================
+
+class ClaveK:
+    """
+    Clave compuesta de ordenamiento lexicográfico estricto de tres niveles:
+    1. Prioridad (P): Menor número P (1=Alta) es menor y se ubica a la izquierda.
+    2. Magnitud (M): Si P empata, menor magnitud numérica se ubica a la izquierda.
+    3. Identificador (I): Si P y M empatan, menor ID único se ubica a la izquierda.
+    """
+    def __init__(self, prioridad: int, magnitud: float, identificador: int):
+        self.prioridad = prioridad          # P
+        self.magnitud = round(float(magnitud), 1)  # M
+        self.identificador = identificador  # I
+
+    def __lt__(self, otro):
+        if self.prioridad != otro.prioridad:
+            return self.prioridad < otro.prioridad
+        if self.magnitud != otro.magnitud:
+            return self.magnitud < otro.magnitud
+        return self.identificador < otro.identificador
+
+    def __eq__(self, otro):
+        return (self.prioridad == otro.prioridad and 
+                self.magnitud == otro.magnitud and 
+                self.identificador == otro.identificador)
+
+    def __repr__(self):
+        return f"K(P={self.prioridad}, M={self.magnitud}, ID={self.identificador})"
+
+
+print("\n--- DEMOSTRACIÓN CLAVE COMPUESTA K = (P, M, I) ---")
+# Ejemplo del enunciado:
+# Raíz (3, 5.2, 10)
+k_raiz = ClaveK(3, 5.2, 10)
+# Caso A: (2, 6.0, 5) -> P=2 < 3 -> Izquierda
+k_caso_a = ClaveK(2, 6.0, 5)
+# Caso B: (3, 5.2, 5) -> Empate P y M, ID 5 < 10 -> Izquierda
+k_caso_b = ClaveK(3, 5.2, 5)
+
+print(f"Raíz: {k_raiz}")
+print(f"¿{k_caso_a} < {k_raiz}? {k_caso_a < k_raiz} (Se va a la IZQUIERDA porque Prioridad 2 < 3)")
+print(f"¿{k_caso_b} < {k_raiz}? {k_caso_b < k_raiz} (Se va a la IZQUIERDA porque ID 5 < 10)")
+
 

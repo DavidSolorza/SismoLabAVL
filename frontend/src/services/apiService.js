@@ -6,6 +6,8 @@
  * Consumes in an isolated manner the RESTful endpoints exposed by the Python backend (FastAPI).
  */
 
+import { busService, BUS_EVENTS } from './busService';
+
 const API_BASE = 'http://127.0.0.1:8000/api/v1';
 
 function parseErrorMessage(data, fallbackMessage) {
@@ -19,10 +21,19 @@ function parseErrorMessage(data, fallbackMessage) {
   return fallbackMessage;
 }
 
-export async function fetchFullDashboardState() {
-  const res = await fetch(`${API_BASE}/sistema/estado-completo`);
-  if (!res.ok) throw new Error('Error al sincronizar el estado completo del sistema');
-  return await res.json();
+export async function fetchFullDashboardState(forceRefresh = false) {
+  return await busService.cache.fetchWithCoalescing(
+    'system_full_dashboard',
+    async () => {
+      const res = await fetch(`${API_BASE}/sistema/estado-completo`);
+      if (!res.ok) throw new Error('Error al sincronizar el estado completo del sistema');
+      const data = await res.json();
+      busService.emit(BUS_EVENTS.SYSTEM_DATA_UPDATED, data);
+      return data;
+    },
+    10000,
+    forceRefresh
+  );
 }
 
 export async function fetchMetrics() {
@@ -71,6 +82,7 @@ export async function createEvent(eventDTO) {
   if (!res.ok) {
     throw new Error(parseErrorMessage(data, 'Error al crear evento'));
   }
+  busService.invalidateState();
   return data;
 }
 
@@ -88,6 +100,7 @@ export async function correctEvent(eventId, nuevaMagnitud, nuevaProfundidad, raz
   if (!res.ok) {
     throw new Error(parseErrorMessage(data, 'Error al corregir evento'));
   }
+  busService.invalidateState();
   return data;
 }
 
@@ -99,6 +112,7 @@ export async function enqueueReport(reportDTO) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al encolar reporte'));
+  busService.emit(BUS_EVENTS.QUEUE_MUTATED, data);
   return data;
 }
 
@@ -106,6 +120,7 @@ export async function processNextReport() {
   const res = await fetch(`${API_BASE}/reportes/procesar`, { method: 'POST' });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al procesar cola FIFO'));
+  busService.invalidateState();
   return data;
 }
 
@@ -113,6 +128,7 @@ export async function undoLastAction() {
   const res = await fetch(`${API_BASE}/sistema/deshacer`, { method: 'POST' });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al desapilar Pila de Deshacer'));
+  busService.invalidateState();
   return data;
 }
 
@@ -124,6 +140,7 @@ export async function archiveBranch(prioridadMinima = 3) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al podar subárbol AVL'));
+  busService.invalidateState();
   return data;
 }
 
@@ -131,6 +148,7 @@ export async function setOperationalMode(mode) {
   const res = await fetch(`${API_BASE}/avl/modo?modo=${mode}`, { method: 'POST' });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al cambiar modo operacional'));
+  busService.invalidateState();
   return data;
 }
 
@@ -140,6 +158,8 @@ export async function clearAllTree(cargarMuestras = false) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al limpiar el árbol'));
+  // Purga absoluta del caché en memoria y almacenamiento local
+  busService.clearAllCache();
   return data;
 }
 
@@ -162,6 +182,7 @@ export async function setSimulationClock(relojIso) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al fijar reloj de simulación'));
+  busService.invalidateState();
   return data;
 }
 
@@ -173,5 +194,6 @@ export async function advanceSimulationClock({ minutes = 0, hours = 0, days = 0,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(parseErrorMessage(data, 'Error al avanzar reloj de simulación'));
+  busService.invalidateState();
   return data;
 }
