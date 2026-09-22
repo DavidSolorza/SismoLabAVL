@@ -15,138 +15,167 @@ export default function MetricsBanner({ metrics }) {
   const ratioBST = Math.round((alturaBST / maxAltura) * 100);
 
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '14px',
-        marginBottom: '14px'
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      
+      {/* Métrica 1: Eventos Activos */}
+      <div className="glass-panel" style={{
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '10px'
       }}>
-        {/* Métrica 1: Eventos Activos */}
-        <div className="glass-panel" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF' }}>
-          <div style={{
-            padding: '10px', borderRadius: '12px',
-            backgroundColor: 'var(--accent-light)',
-            color: 'var(--accent)',
-            border: '1px solid var(--accent-border)'
-          }}>
-            <Layers size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-              Eventos Activos en Árbol
-            </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
-              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {totalNodos}
-              </h3>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>nodos K=(P,M,I)</span>
-            </div>
-          </div>
+        <div style={{
+          padding: '7px', borderRadius: '8px',
+          backgroundColor: 'var(--accent-light)',
+          color: 'var(--accent)',
+          border: '1px solid var(--accent-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <Layers size={17} />
         </div>
-
-        {/* Métrica 2: Alturas Comparadas AVL vs BST */}
-        <div className="glass-panel" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF' }}>
-          <div style={{
-            padding: '10px', borderRadius: '12px',
-            backgroundColor: 'var(--p2-bg)',
-            color: 'var(--p2-text)',
-            border: '1px solid var(--p2-border)'
-          }}>
-            <BarChart3 size={22} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-              Altura: AVL vs. BST
-            </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
-              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent)' }}>
-                h={alturaAVL}
-              </h3>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}> vs.</span>
-              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--p2-text)' }}>
-                h={alturaBST}
-              </h3>
-            </div>
-          </div>
-        </div>
-
-        {/* Métrica 3: Estado de Balance e Invariantes */}
-        <div className="glass-panel" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF' }}>
-          <div style={{
-            padding: '10px', borderRadius: '12px',
-            backgroundColor: esValido ? 'var(--p3-bg)' : 'var(--p1-bg)',
-            color: esValido ? 'var(--p3-text)' : 'var(--p1-text)',
-            border: `1px solid ${esValido ? 'var(--p3-border)' : 'var(--p1-border)'}`
-          }}>
-            {esValido ? <ShieldCheck size={22} /> : <AlertTriangle size={22} />}
-          </div>
-          <div>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-              Invariante de Balance AVL
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-              <span style={{
-                fontSize: '0.86rem', fontWeight: 800,
-                color: esValido ? 'var(--p3-text)' : 'var(--p1-text)'
-              }}>
-                {esValido ? 'Balance Estricto (FB ∈ [-1, 1])' : 'Desbalance Temporal (Estrés)'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Métrica 4: Complejidad Teórica */}
-        <div className="glass-panel" style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF' }}>
-          <div style={{
-            padding: '10px', borderRadius: '12px',
-            backgroundColor: '#F0FDF4',
-            color: '#16A34A',
-            border: '1px solid #BBF7D0'
-          }}>
-            <Zap size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-              Complejidad Asintótica
-            </span>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-              O(log₂ N) Garantizado
-            </h3>
+        <div>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+            Nodos Activos en Árbol
+          </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+            <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+              {totalNodos}
+            </h4>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>sismos K=(P,M,I)</span>
           </div>
         </div>
       </div>
 
-      {/* Barra Visual Comparativa de Eficiencia AVL vs BST */}
-      {totalNodos > 0 && (
-        <div className="glass-panel" style={{ padding: '12px 18px', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-              Comparativa Visual de Compactación de Altura:
+      {/* Métrica 2: Alturas Comparadas AVL vs BST */}
+      <div className="glass-panel" style={{
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '10px'
+      }}>
+        <div style={{
+          padding: '7px', borderRadius: '8px',
+          backgroundColor: 'var(--p2-bg)',
+          color: 'var(--p2-text)',
+          border: '1px solid var(--p2-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <BarChart3 size={17} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+            Altura: AVL vs. BST
+          </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent)', lineHeight: 1.1 }}>
+              h={alturaAVL}
+            </h4>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>vs.</span>
+            <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--p2-text)', lineHeight: 1.1 }}>
+              h={alturaBST}
+            </h4>
+          </div>
+        </div>
+      </div>
+
+      {/* Métrica 3: Invariante de Balance */}
+      <div className="glass-panel" style={{
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '10px'
+      }}>
+        <div style={{
+          padding: '7px', borderRadius: '8px',
+          backgroundColor: esValido ? 'var(--p3-bg)' : 'var(--p1-bg)',
+          color: esValido ? 'var(--p3-text)' : 'var(--p1-text)',
+          border: `1px solid ${esValido ? 'var(--p3-border)' : 'var(--p1-border)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          {esValido ? <ShieldCheck size={17} /> : <AlertTriangle size={17} />}
+        </div>
+        <div>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+            Invariante de Balance AVL
+          </span>
+          <div style={{ marginTop: '1px' }}>
+            <span style={{
+              fontSize: '0.78rem', fontWeight: 800,
+              color: esValido ? 'var(--p3-text)' : 'var(--p1-text)'
+            }}>
+              {esValido ? 'Balance Estricto (|FB| ≤ 1)' : 'Desbalance Detectado'}
             </span>
           </div>
+        </div>
+      </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: '280px', maxWidth: '600px' }}>
-            {/* Barra AVL */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '3px', fontWeight: 600 }}>
-                <span style={{ color: 'var(--accent)' }}>Árbol AVL (h={alturaAVL})</span>
-                <span style={{ color: 'var(--accent)' }}>{ratioAVL}%</span>
-              </div>
-              <div style={{ width: '100%', height: '7px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${ratioAVL}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: '4px', transition: 'width 0.5s ease' }}></div>
-              </div>
+      {/* Métrica 4: Complejidad Teórica */}
+      <div className="glass-panel" style={{
+        padding: '10px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '10px'
+      }}>
+        <div style={{
+          padding: '7px', borderRadius: '8px',
+          backgroundColor: '#F0FDF4',
+          color: '#16A34A',
+          border: '1px solid #BBF7D0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <Zap size={17} />
+        </div>
+        <div>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+            Complejidad Asintótica
+          </span>
+          <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '1px' }}>
+            O(log₂ N) Garantizado
+          </h4>
+        </div>
+      </div>
+
+      {/* Barra Visual Comparativa AVL vs BST */}
+      {totalNodos > 0 && (
+        <div className="glass-panel" style={{
+          padding: '10px 12px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            Comparativa de Compactación:
+          </span>
+
+          {/* Barra AVL */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '2px', fontWeight: 600 }}>
+              <span style={{ color: 'var(--accent)' }}>Árbol AVL (h={alturaAVL})</span>
+              <span style={{ color: 'var(--accent)' }}>{ratioAVL}%</span>
             </div>
+            <div style={{ width: '100%', height: '6px', backgroundColor: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: `${ratioAVL}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+            </div>
+          </div>
 
-            {/* Barra BST */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '3px', fontWeight: 600 }}>
-                <span style={{ color: 'var(--p2-text)' }}>Árbol BST (h={alturaBST})</span>
-                <span style={{ color: 'var(--p2-text)' }}>{ratioBST}%</span>
-              </div>
-              <div style={{ width: '100%', height: '7px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${ratioBST}%`, height: '100%', backgroundColor: '#F59E0B', borderRadius: '4px', transition: 'width 0.5s ease' }}></div>
-              </div>
+          {/* Barra BST */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '2px', fontWeight: 600 }}>
+              <span style={{ color: 'var(--p2-text)' }}>Árbol BST (h={alturaBST})</span>
+              <span style={{ color: 'var(--p2-text)' }}>{ratioBST}%</span>
+            </div>
+            <div style={{ width: '100%', height: '6px', backgroundColor: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: `${ratioBST}%`, height: '100%', backgroundColor: '#F59E0B', borderRadius: '3px', transition: 'width 0.4s ease' }} />
             </div>
           </div>
         </div>
@@ -154,3 +183,4 @@ export default function MetricsBanner({ metrics }) {
     </div>
   );
 }
+

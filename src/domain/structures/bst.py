@@ -9,7 +9,7 @@ Strictly based on 1_árbol_bst.py implementation with support for Composite Key 
 and seismic entities. Enables comparative benchmarking against AVL Tree.
 """
 
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 
 class NodoBST:
     """
@@ -261,3 +261,39 @@ class ArbolBST:
                 return -1
             return 1 + max(_alt(nodo.getHijoIzquierdo()), _alt(nodo.getHijoDerecho()))
         return _alt(self.raiz)
+
+    def to_dict_jerarquico(self) -> Optional[Dict[str, Any]]:
+        """
+        Retorna la estructura jerárquica recursiva del árbol BST para renderizado gráfico.
+        Returns recursive hierarchical structure of BST for visual rendering.
+        """
+        if self.raiz is None:
+            return None
+        return self._nodo_to_dict(self.raiz)
+
+    def _nodo_to_dict(self, nodo: Optional[NodoBST]) -> Optional[Dict[str, Any]]:
+        if nodo is None:
+            return None
+
+        def _alt(n: Optional[NodoBST]) -> int:
+            if n is None:
+                return -1
+            return 1 + max(_alt(n.getHijoIzquierdo()), _alt(n.getHijoDerecho()))
+
+        h_izq = _alt(nodo.getHijoIzquierdo())
+        h_der = _alt(nodo.getHijoDerecho())
+        fb = h_izq - h_der
+        h = max(h_izq, h_der) + 1 if (nodo.getHijoIzquierdo() or nodo.getHijoDerecho()) else 0
+
+        ev = nodo.getValor()
+        ev_dict = ev.to_dict() if hasattr(ev, 'to_dict') else str(ev)
+
+        return {
+            "valor": ev_dict,
+            "altura": h,
+            "factor_balanceo": fb,
+            "relacion_izquierda": "MENOR (<)",
+            "relacion_derecha": "MAYOR (>)",
+            "hijo_izquierdo": self._nodo_to_dict(nodo.getHijoIzquierdo()),
+            "hijo_derecho": self._nodo_to_dict(nodo.getHijoDerecho())
+        }

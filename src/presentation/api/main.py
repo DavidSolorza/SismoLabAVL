@@ -162,6 +162,20 @@ def limpiar_arbol_total(cargar_muestras: bool = False):
     }
 
 
+@app.get("/api/v1/sistema/estado-completo", tags=["Queries"])
+def obtener_estado_completo_sistema():
+    """Retorna en una sola petición HTTP atómica: métricas de auditoría, lista de eventos ordenados, árbol AVL jerárquico y árbol BST jerárquico"""
+    eventos = store.avl_tree.recorrido_inorden()
+    return {
+        "success": True,
+        "metricas": AVLAuditor.get_metrics(),
+        "eventos": [e.to_dict() for e in eventos],
+        "avl_tree": store.avl_tree.to_dict_jerarquico(),
+        "bst_tree": store.bst_tree.to_dict_jerarquico(),
+        "cola_size": store.report_queue.size()
+    }
+
+
 @app.get("/api/v1/eventos", tags=["Queries"])
 def listar_eventos_ordenados():
     """Retorna los eventos ordenados por la Clave Compuesta K=(P, M, I) mediante recorrido Inorden en el AVL"""
@@ -188,6 +202,15 @@ def obtener_arbol_jerarquico():
     return {
         "success": True,
         "arbol": store.avl_tree.to_dict_jerarquico()
+    }
+
+
+@app.get("/api/v1/bst/arbol-jerarquico", tags=["Queries"])
+def obtener_arbol_bst_jerarquico():
+    """Retorna la estructura jerárquica recursiva del Árbol BST estándar (sin balancear)"""
+    return {
+        "success": True,
+        "arbol": store.bst_tree.to_dict_jerarquico()
     }
 
 

@@ -246,3 +246,55 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   "total_nodos": 0
 }
 ```
+
+---
+
+#### 2.9. Árbol Jerárquico BST para Visualización (`GET /api/v1/bst/arbol-jerarquico`)
+**Descripción:** Retorna la estructura jerárquica recursiva del árbol binario de búsqueda clásico (BST sin auto-balanceo) para su renderizado y comparación visual contra el árbol balanceado AVL.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Estructura de árbol jerárquico serializada.
+```json
+{
+  "success": true,
+  "arbol": {
+    "valor": {
+      "id": 1001,
+      "magnitud": 6.5,
+      "profundidad": 15.0,
+      "estacion_id": "EST-01"
+    },
+    "altura": 3,
+    "factor_balanceo": 2,
+    "hijo_izquierdo": null,
+    "hijo_derecho": { ... },
+    "relacion_izquierda": null,
+    "relacion_derecha": "M=7.0 > M=6.5 (Der)"
+  }
+}
+```
+
+---
+
+#### 2.10. Estado Completo Unificado del Dashboard (`GET /api/v1/sistema/estado-completo`)
+**Descripción:** Retorna en una única petición HTTP atómica de alto rendimiento la totalidad del estado del sistema (métricas de auditoría, lista inorden de eventos, topología jerárquica AVL y topología jerárquica BST), eliminando sobrecarga de red y garantizando consistencia transaccional absoluta en la UI.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Estado consolidado del sistema.
+```json
+{
+  "success": true,
+  "metricas": {
+    "total_nodos": 12,
+    "altura_avl": 4,
+    "altura_bst": 6,
+    "modo_operacion": "NORMAL"
+  },
+  "eventos": [ ... ],
+  "avl_tree": { ... },
+  "bst_tree": { ... },
+  "cola_size": 0
+}
+```
+
+

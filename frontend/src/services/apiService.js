@@ -19,6 +19,12 @@ function parseErrorMessage(data, fallbackMessage) {
   return fallbackMessage;
 }
 
+export async function fetchFullDashboardState() {
+  const res = await fetch(`${API_BASE}/sistema/estado-completo`);
+  if (!res.ok) throw new Error('Error al sincronizar el estado completo del sistema');
+  return await res.json();
+}
+
 export async function fetchMetrics() {
   const res = await fetch(`${API_BASE}/avl/metricas`);
   if (!res.ok) throw new Error('Error al obtener métricas del AVL');
@@ -43,6 +49,13 @@ export async function fetchPredefinedEvents() {
 export async function fetchTreeHierarchy() {
   const res = await fetch(`${API_BASE}/avl/arbol-jerarquico`);
   if (!res.ok) throw new Error('Error al cargar la jerarquía del árbol AVL');
+  const json = await res.json();
+  return json.arbol;
+}
+
+export async function fetchBstHierarchy() {
+  const res = await fetch(`${API_BASE}/bst/arbol-jerarquico`);
+  if (!res.ok) throw new Error('Error al cargar la jerarquía del árbol BST');
   const json = await res.json();
   return json.arbol;
 }

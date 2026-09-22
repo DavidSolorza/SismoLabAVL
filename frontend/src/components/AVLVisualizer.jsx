@@ -1,13 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { GitCommit, Crown, ZoomIn, ZoomOut, ArrowLeftRight, ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  GitCommit, Crown, ZoomIn, ZoomOut, Maximize2, Minimize2,
+  Move, Search, AlertTriangle, CheckCircle2, Split, Crosshair,
+  PlusCircle, Sparkles, Undo2, BarChart3, Database, Clock,
+  Scissors, Trash2, RefreshCw, Activity
+} from 'lucide-react';
 
 /**
- * Recursive Tree Node Component / Componente de Nodo Recursivo en Soft UI
- * Muestra explícitamente:
- * - A la izquierda los MENORES (<) (ej. 1.0 M < 5.0 M)
- * - A la derecha los MAYORES (>) (ej. 9.0 M > 5.0 M)
+ * Componente de Nodo Recursivo en Soft UI
+ * Soporta renderizado adaptativo para Árbol AVL y Árbol BST estándar,
+ * con resaltado en tiempo real según búsqueda en el mapa.
  */
-function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = null }) {
+function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = null, treeType = 'AVL', searchQuery = '' }) {
   if (!node || !node.valor) return null;
 
   const ev = node.valor;
@@ -15,6 +19,14 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
   const fb = node.factor_balanceo ?? 0;
   const h = node.altura ?? 0;
   const mag = typeof ev.magnitud === 'number' ? ev.magnitud.toFixed(1) : ev.magnitud;
+  const esDesbalanceado = Math.abs(fb) > 1;
+
+  // Comprobar si el nodo coincide con el término de búsqueda
+  const matchesSearch = searchQuery.trim() !== '' && (
+    ev.id.toString().includes(searchQuery.trim()) ||
+    mag.toString().includes(searchQuery.trim()) ||
+    (ev.estacion_id && ev.estacion_id.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+  );
 
   // Estilos pasteles para prioridades
   const priorityTheme = (p) => {
@@ -46,7 +58,6 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
   };
 
   const theme = priorityTheme(p);
-  const esDesbalanceado = Math.abs(fb) > 1;
 
   return (
     <div style={{
@@ -57,9 +68,9 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
       {/* Indicador de relación con el padre (Menor < o Mayor >) */}
       {relacion && (
         <div style={{
-          fontSize: '0.68rem',
+          fontSize: '0.66rem',
           fontWeight: 800,
-          padding: '2px 8px',
+          padding: '2px 7px',
           borderRadius: '6px',
           marginBottom: '6px',
           letterSpacing: '0.03em',
@@ -68,54 +79,70 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
           border: `1px solid ${relacion === 'MENOR' ? '#BFDBFE' : '#FECACA'}`,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '3px'
+          gap: '3px',
+          boxShadow: 'var(--shadow-sm)'
         }}>
           {relacion === 'MENOR' ? '← MENOR (<)' : 'MAYOR (>) →'}
         </div>
       )}
 
-      {/* Tarjeta del Nodo AVL */}
+      {/* Tarjeta del Nodo */}
       <div
         className="avl-node-card"
-        onClick={() => onSelectNode(ev)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectNode(ev);
+        }}
         style={{
-          padding: '12px 16px',
+          padding: '11px 15px',
           borderRadius: '14px',
-          border: `2px solid ${theme.cardBorder}`,
-          backgroundColor: '#FFFFFF',
-          boxShadow: `0 4px 16px ${theme.cardShadow}`,
+          border: matchesSearch
+            ? '3px solid #F59E0B'
+            : (esDesbalanceado && treeType === 'BST' ? '2px dashed #EF4444' : `2px solid ${theme.cardBorder}`),
+          backgroundColor: matchesSearch
+            ? '#FEF3C7'
+            : (esDesbalanceado && treeType === 'BST' ? '#FFF5F5' : '#FFFFFF'),
+          boxShadow: matchesSearch
+            ? '0 0 0 4px rgba(245, 158, 11, 0.35), 0 8px 20px rgba(245, 158, 11, 0.2)'
+            : `0 4px 14px ${theme.cardShadow}`,
           cursor: 'pointer',
-          minWidth: '165px',
+          minWidth: '155px',
           textAlign: 'center',
           position: 'relative',
-          zIndex: 10
+          zIndex: 10,
+          transform: matchesSearch ? 'scale(1.08)' : 'none',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
         }}
-        title={`Clic para inspeccionar o corregir sismo SIS-${ev.id}`}
+        title={`Clic para inspeccionar sismo SIS-${ev.id} (M=${mag}, P=${p})`}
       >
         {/* Corona Sutil para el Nodo Raíz */}
         {isRoot && (
           <div style={{
             position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)',
-            backgroundColor: '#FEF3C7', border: '1px solid #FDE68A',
+            backgroundColor: treeType === 'AVL' ? '#FEF3C7' : '#ECFDF5',
+            border: `1px solid ${treeType === 'AVL' ? '#FDE68A' : '#A7F3D0'}`,
             padding: '2px 8px', borderRadius: '10px', fontSize: '0.68rem',
-            fontWeight: 800, color: '#92400E', display: 'flex', alignItems: 'center', gap: '4px',
-            boxShadow: 'var(--shadow-sm)'
+            fontWeight: 800,
+            color: treeType === 'AVL' ? '#92400E' : '#065F46',
+            display: 'flex', alignItems: 'center', gap: '4px',
+            boxShadow: 'var(--shadow-sm)', whiteSpace: 'nowrap'
           }}>
-            <Crown size={12} color="#D97706" /> RAÍZ AVL
+            <Crown size={12} color={treeType === 'AVL' ? '#D97706' : '#059669'} />
+            RAÍZ {treeType}
           </div>
         )}
 
         {/* Encabezado del Nodo: Prioridad y Factor de Balance (FB) */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '6px', fontSize: '0.74rem'
+          marginBottom: '5px', fontSize: '0.72rem'
         }}>
           <span style={{
             backgroundColor: theme.bgBadge,
             color: theme.textBadge,
             border: `1px solid ${theme.borderBadge}`,
-            padding: '2px 7px',
-            borderRadius: '8px',
+            padding: '2px 6px',
+            borderRadius: '7px',
             fontWeight: 800
           }}>
             P{p}
@@ -125,80 +152,84 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
             backgroundColor: esDesbalanceado ? 'var(--p1-bg)' : 'var(--p3-bg)',
             color: esDesbalanceado ? 'var(--p1-text)' : 'var(--p3-text)',
             border: `1px solid ${esDesbalanceado ? 'var(--p1-border)' : 'var(--p3-border)'}`,
-            padding: '1px 6px',
+            padding: '1px 5px',
             borderRadius: '6px',
             fontWeight: 700,
-            fontSize: '0.7rem'
+            fontSize: '0.68rem',
+            display: 'inline-flex', alignItems: 'center', gap: '2px'
           }}>
+            {esDesbalanceado && <AlertTriangle size={10} />}
             FB={fb}
           </span>
         </div>
 
-        {/* Magnitud Sísmica Destacada (1.0 menor <-> 9.0 mayor) */}
+        {/* Magnitud Sísmica Destacada */}
         <div style={{
-          fontSize: '1.25rem',
+          fontSize: '1.2rem',
           fontWeight: 800,
           color: 'var(--text-primary)',
           letterSpacing: '-0.02em',
           margin: '2px 0'
         }}>
-          {mag} <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 700 }}>M</span>
+          {mag} <span style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 700 }}>M</span>
         </div>
 
         {/* Clave Compuesta K = [M, P, I] */}
         <div style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: '0.78rem',
+          fontSize: '0.74rem',
           fontWeight: 700,
           color: 'var(--text-secondary)',
           backgroundColor: '#F8FAFC',
-          padding: '3px 6px',
-          borderRadius: '6px',
+          padding: '2px 5px',
+          borderRadius: '5px',
           border: '1px solid var(--border-subtle)',
-          margin: '4px 0'
+          margin: '3px 0'
         }}>
           K=({mag}M, P{p}, #{ev.id})
         </div>
 
         {/* Identificador y Altura */}
-        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
           {ev.formatted_id || `SIS-${ev.id}`} • h={h}
         </div>
       </div>
 
       {/* Conexiones SVG y Subárboles Izquierdo / Derecho */}
       {(node.hijo_izquierdo || node.hijo_derecho) && (
-        <div style={{ width: '100%', marginTop: '14px' }}>
+        <div style={{ width: '100%', marginTop: '12px' }}>
           {/* Líneas de conexión */}
           <div style={{
             display: 'flex', justifyContent: 'space-around',
             width: '100%', height: '22px', position: 'relative'
           }}>
-            <svg style={{ position: 'absolute', top: '-14px', left: 0, width: '100%', height: '36px', pointerEvents: 'none' }}>
+            <svg style={{ position: 'absolute', top: '-12px', left: 0, width: '100%', height: '34px', pointerEvents: 'none' }}>
               {node.hijo_izquierdo && (
-                <line x1="50%" y1="0" x2="25%" y2="36" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="50%" y1="0" x2="25%" y2="34" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 3" />
               )}
               {node.hijo_derecho && (
-                <line x1="50%" y1="0" x2="75%" y2="36" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="50%" y1="0" x2="75%" y2="34" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 3" />
               )}
             </svg>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
             {/* Rama Izquierda (MENORES <) */}
-            <div style={{ opacity: node.hijo_izquierdo ? 1 : 0.3 }}>
+            <div style={{ opacity: node.hijo_izquierdo ? 1 : 0.35 }}>
               {node.hijo_izquierdo ? (
                 <TreeNode
                   node={node.hijo_izquierdo}
                   onSelectNode={onSelectNode}
                   level={level + 1}
                   relacion="MENOR"
+                  treeType={treeType}
+                  searchQuery={searchQuery}
                 />
               ) : (
                 <div style={{
-                  fontSize: '0.68rem', color: 'var(--text-muted)',
-                  textAlign: 'center', padding: '6px 8px',
-                  backgroundColor: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1'
+                  fontSize: '0.66rem', color: 'var(--text-muted)',
+                  textAlign: 'center', padding: '5px 7px',
+                  backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
                 }}>
                   Izq (&lt; Menor): ∅
                 </div>
@@ -206,19 +237,21 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
             </div>
 
             {/* Rama Derecha (MAYORES >) */}
-            <div style={{ opacity: node.hijo_derecho ? 1 : 0.3 }}>
+            <div style={{ opacity: node.hijo_derecho ? 1 : 0.35 }}>
               {node.hijo_derecho ? (
                 <TreeNode
                   node={node.hijo_derecho}
                   onSelectNode={onSelectNode}
                   level={level + 1}
                   relacion="MAYOR"
+                  treeType={treeType}
+                  searchQuery={searchQuery}
                 />
               ) : (
                 <div style={{
-                  fontSize: '0.68rem', color: 'var(--text-muted)',
-                  textAlign: 'center', padding: '6px 8px',
-                  backgroundColor: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1'
+                  fontSize: '0.66rem', color: 'var(--text-muted)',
+                  textAlign: 'center', padding: '5px 7px',
+                  backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
                 }}>
                   Der (&gt; Mayor): ∅
                 </div>
@@ -232,145 +265,841 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
   );
 }
 
-export default function AVLVisualizer({ treeData, onSelectEvent }) {
+/**
+ * Visualizador Topológico en Pantalla Completa
+ * Estructura Perimetral Elíptica: Centro 100% Despejado con Docks en Esquinas y Perímetro
+ */
+export default function AVLVisualizer({
+  treeData,
+  bstData,
+  onSelectEvent,
+  // Docks & Modals Triggers
+  onOpenCreateModal,
+  onOpenPresetsModal,
+  onOpenMetricsModal,
+  onOpenEventsModal,
+  onOpenQueueModal,
+  onUndo,
+  onArchiveBranch,
+  onClearTree,
+  onToggleMode,
+  onRefresh,
+  currentMode = 'NORMAL',
+  eventsCount = 0,
+  queueCount = 0,
+  loading = false
+}) {
+  const [viewMode, setViewMode] = useState('dual'); // 'dual' | 'avl' | 'bst'
   const [zoom, setZoom] = useState(1);
-  const containerRef = useRef(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.15, 1.8));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.15, 0.5));
-  const handleZoomReset = () => setZoom(1);
+  const mapContainerRef = useRef(null);
 
-  if (!treeData) {
-    return (
-      <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center', marginBottom: '20px', backgroundColor: '#FFFFFF' }}>
-        <GitCommit size={46} style={{ color: 'var(--accent)', opacity: 0.4, marginBottom: '12px' }} />
-        <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 700 }}>Árbol AVL sin Nodos Activos</h3>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '500px', margin: '4px auto 0 auto' }}>
-          El árbol se encuentra vacío. Registra un nuevo sismo mediante "<strong>Crear Evento</strong>" o procesa reportes desde la "<strong>Cola FIFO</strong>".
-        </p>
-      </div>
-    );
-  }
+  // Manejo de Arrastre y Paneo (Pan & Drag)
+  const handleMouseDown = (e) => {
+    // Si se hace clic en un botón, input o nodo, no activar arrastre del mapa
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.avl-node-card')) {
+      return;
+    }
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - pan.x,
+      y: e.clientY - pan.y
+    });
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  }, [isDragging, dragStart]);
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Manejo directo de Zoom con la Rueda del Ratón (Scroll = Zoom directo tipo Figma/Maps)
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    const handleWheelZoom = (e) => {
+      e.preventDefault();
+      // Scroll hacia arriba = Zoom In (+), hacia abajo = Zoom Out (-)
+      const zoomFactor = e.deltaY < 0 ? 1.09 : 0.91;
+      setZoom(prev => {
+        const nextZoom = parseFloat((prev * zoomFactor).toFixed(2));
+        return Math.min(Math.max(nextZoom, 0.25), 3.0);
+      });
+    };
+
+    container.addEventListener('wheel', handleWheelZoom, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheelZoom);
+    };
+  }, []);
+
+  // Controles de Zoom y Centrado
+  const handleZoomIn = () => setZoom(prev => Math.min(parseFloat((prev + 0.15).toFixed(2)), 3.0));
+  const handleZoomOut = () => setZoom(prev => Math.max(parseFloat((prev - 0.15).toFixed(2)), 0.25));
+  const handleResetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Métricas de los árboles
+  const avlHeight = treeData ? treeData.altura : 0;
+  const bstHeight = bstData ? bstData.altura : 0;
+  const hasAnyTree = Boolean(treeData || bstData);
 
   return (
-    <div className="glass-panel" style={{ padding: '22px 24px', marginBottom: '20px', backgroundColor: '#FFFFFF' }}>
-      
-      {/* Encabezado del Visualizador con Leyendas y Controles */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '14px', flexWrap: 'wrap', gap: '14px'
-      }}>
-        <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }} className="gradient-text">
-            <GitCommit size={22} style={{ color: 'var(--accent)' }} />
-            <span>Topología Jerárquica del Árbol AVL</span>
-          </h2>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Orden numérico por Magnitud $M$ (Menor a la Izquierda $\leftarrow$, Mayor a la Derecha $\rightarrow$) con balanceo AVL $|FB| \le 1$.
-          </p>
-        </div>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
+      backgroundColor: '#F8FAFC',
+      userSelect: 'none'
+    }}>
 
-        {/* Leyenda de Colores Pasteles y Controles de Zoom */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          {/* Leyendas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.78rem' }}>
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              backgroundColor: 'var(--p1-bg)', color: 'var(--p1-text)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700
-            }}>
-              P1 Crítico
-            </span>
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              backgroundColor: 'var(--p2-bg)', color: 'var(--p2-text)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700
-            }}>
-              P2 Moderado
-            </span>
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              backgroundColor: 'var(--p3-bg)', color: 'var(--p3-text)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700
-            }}>
-              P3 Normal
+      {/* ========================================================================= */}
+      {/* 1. ESQUINA SUPERIOR IZQUIERDA: IDENTIDAD, MODO OPERACIONAL Y ALTURAS     */}
+      {/* ========================================================================= */}
+      <div style={{
+        position: 'absolute',
+        top: '16px',
+        left: '16px',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(10px)',
+        padding: '7px 14px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-md)'
+      }}>
+        {/* Logotipo y Título */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1.35rem' }}>🌋</span>
+          <div>
+            <h1 style={{ fontSize: '0.96rem', fontWeight: 800, lineHeight: 1.1 }} className="gradient-text">
+              SismoLab AVL
+            </h1>
+            <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              Universidad de Caldas
             </span>
           </div>
-
-          {/* Controles de Zoom */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '4px',
-            backgroundColor: '#F1F5F9', padding: '3px 6px', borderRadius: '8px'
-          }}>
-            <button
-              onClick={handleZoomOut}
-              className="btn-secondary"
-              style={{ padding: '4px 8px', border: 'none', background: '#FFFFFF', fontSize: '0.75rem' }}
-              title="Alejar (-)"
-            >
-              <ZoomOut size={14} />
-            </button>
-            <button
-              onClick={handleZoomReset}
-              className="btn-secondary"
-              style={{ padding: '4px 8px', border: 'none', background: '#FFFFFF', fontSize: '0.75rem', fontWeight: 700 }}
-              title="Restablecer vista (100%)"
-            >
-              {Math.round(zoom * 100)}%
-            </button>
-            <button
-              onClick={handleZoomIn}
-              className="btn-secondary"
-              style={{ padding: '4px 8px', border: 'none', background: '#FFFFFF', fontSize: '0.75rem' }}
-              title="Acercar (+)"
-            >
-              <ZoomIn size={14} />
-            </button>
-          </div>
         </div>
+
+        <div style={{ height: '24px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Conmutador de Modo Operacional (NORMAL <-> STRESS) */}
+        <button
+          onClick={onToggleMode}
+          className="btn-secondary"
+          style={{
+            padding: '4px 10px',
+            fontSize: '0.74rem',
+            fontWeight: 800,
+            borderRadius: '8px',
+            backgroundColor: currentMode === 'NORMAL' ? 'var(--p3-bg)' : 'var(--p1-bg)',
+            color: currentMode === 'NORMAL' ? 'var(--p3-text)' : 'var(--p1-text)',
+            border: `1px solid ${currentMode === 'NORMAL' ? 'var(--p3-border)' : 'var(--p1-border)'}`
+          }}
+          title="Clic para alternar entre balance inmediato (NORMAL) y balance diferido (STRESS)"
+        >
+          <Activity size={13} />
+          <span>{currentMode}</span>
+        </button>
+
+        {/* Indicadores en Vivo de Altura */}
+        <span style={{
+          fontSize: '0.72rem',
+          fontWeight: 800,
+          padding: '4px 8px',
+          borderRadius: '7px',
+          backgroundColor: '#F1F5F9',
+          color: 'var(--text-secondary)'
+        }}>
+          🌳 AVL: <strong>h={avlHeight}</strong> • 🌱 BST: <strong>h={bstHeight}</strong>
+        </span>
+
+        {/* Botón de Sincronización / Refrescar */}
+        <button
+          onClick={onRefresh}
+          className="btn-secondary"
+          style={{ padding: '5px 8px', border: 'none', background: '#F1F5F9', borderRadius: '7px' }}
+          title="Sincronizar y recargar estado del sistema"
+        >
+          <RefreshCw size={13} className={loading ? 'spin-animation' : ''} style={{ color: 'var(--text-secondary)' }} />
+        </button>
       </div>
 
-      {/* Banner Didáctico de Bifurcación: Izquierda (Menor) vs Derecha (Mayor) */}
+      {/* ========================================================================= */}
+      {/* 2. SUPERIOR CENTRO: SELECTOR DE VISTAS Y BUSCADOR DE NODOS               */}
+      {/* ========================================================================= */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px',
-        padding: '8px 16px', borderRadius: '8px', marginBottom: '16px',
-        backgroundColor: '#F8FAFC', border: '1px solid var(--border-subtle)',
-        fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap'
+        position: 'absolute',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(10px)',
+        padding: '5px 12px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-md)'
       }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#1D4ED8' }}>
-          <ArrowLeft size={14} /> Rama Izquierda: Claves Menores (&lt; ej. 1.0 M)
-        </span>
-        <span style={{ color: 'var(--text-muted)' }}>•</span>
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-          Centro: Nodo Raíz / Padre
-        </span>
-        <span style={{ color: 'var(--text-muted)' }}>•</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#B91C1C' }}>
-          Rama Derecha: Claves Mayores (&gt; ej. 9.0 M) <ArrowRight size={14} />
-        </span>
-      </div>
+        {/* Selector de Árboles (Segmented Controls) */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          backgroundColor: '#F1F5F9',
+          padding: '3px',
+          borderRadius: '9px',
+          gap: '3px'
+        }}>
+          <button
+            onClick={() => setViewMode('dual')}
+            style={{
+              padding: '5px 12px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              borderRadius: '7px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              backgroundColor: viewMode === 'dual' ? '#FFFFFF' : 'transparent',
+              color: viewMode === 'dual' ? 'var(--accent)' : 'var(--text-secondary)',
+              boxShadow: viewMode === 'dual' ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            <Split size={14} />
+            <span>⚖️ Ambos (Dual)</span>
+          </button>
 
-      {/* Contenedor del Diagrama con Soporte de Zoom y Scroll Suave */}
-      <div
-        ref={containerRef}
-        style={{
-          width: '100%',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          padding: '24px 12px 36px 12px',
-          backgroundColor: '#F8FAFC',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-subtle)',
+          <button
+            onClick={() => setViewMode('avl')}
+            style={{
+              padding: '5px 12px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              borderRadius: '7px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              backgroundColor: viewMode === 'avl' ? '#FFFFFF' : 'transparent',
+              color: viewMode === 'avl' ? 'var(--accent)' : 'var(--text-secondary)',
+              boxShadow: viewMode === 'avl' ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            <span>🌳 Solo AVL</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('bst')}
+            style={{
+              padding: '5px 12px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              borderRadius: '7px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              backgroundColor: viewMode === 'bst' ? '#FFFFFF' : 'transparent',
+              color: viewMode === 'bst' ? 'var(--accent)' : 'var(--text-secondary)',
+              boxShadow: viewMode === 'bst' ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            <span>🌱 Solo BST</span>
+          </button>
+        </div>
+
+        {/* Campo de Búsqueda de Nodos en Vivo */}
+        <div style={{
           display: 'flex',
-          justifyContent: 'center',
-          minHeight: '280px'
+          alignItems: 'center',
+          gap: '6px',
+          backgroundColor: '#F1F5F9',
+          padding: '4px 10px',
+          borderRadius: '8px',
+          border: '1px solid var(--border-subtle)'
+        }}>
+          <Search size={14} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Buscar nodo (#ID, Mag)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              outline: 'none',
+              fontSize: '0.76rem',
+              width: '150px',
+              color: 'var(--text-primary)'
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 3. ESQUINA SUPERIOR DERECHA: ACCIONES PRIMARIAS DE INGESTA                */}
+      {/* ========================================================================= */}
+      <div style={{
+        position: 'absolute',
+        top: '16px',
+        right: '16px',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(10px)',
+        padding: '6px 10px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-md)'
+      }}>
+        {/* + Nuevo Sismo */}
+        <button
+          onClick={onOpenCreateModal}
+          className="btn-primary"
+          style={{ padding: '7px 14px', fontSize: '0.8rem', fontWeight: 700 }}
+        >
+          <PlusCircle size={15} />
+          <span>+ Nuevo Sismo</span>
+        </button>
+
+        {/* Catálogo Rápido Predefinidos */}
+        <button
+          onClick={onOpenPresetsModal}
+          className="btn-secondary"
+          style={{
+            padding: '7px 12px',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            backgroundColor: '#FEF3C7',
+            color: '#92400E',
+            borderColor: '#FDE68A'
+          }}
+          title="Abrir catálogo rápido de sismos colombianos predefinidos"
+        >
+          <Sparkles size={14} style={{ color: '#D97706' }} />
+          <span>⚡ Sismos Predefinidos</span>
+        </button>
+
+        {/* Deshacer (Undo LIFO) */}
+        <button
+          onClick={onUndo}
+          className="btn-secondary"
+          style={{ padding: '7px 12px', fontSize: '0.78rem', fontWeight: 600 }}
+          title="Revertir la última acción mediante la Pila LIFO"
+        >
+          <Undo2 size={14} />
+          <span>Deshacer</span>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 4. ESQUINA INFERIOR IZQUIERDA: DOCK DE HERRAMIENTAS Y MÓDULOS DEL SISTEMA */}
+      {/* ========================================================================= */}
+      <div style={{
+        position: 'absolute',
+        bottom: '16px',
+        left: '16px',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(10px)',
+        padding: '7px 12px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-lg)',
+        flexWrap: 'wrap'
+      }}>
+        {/* Botón Métricas */}
+        <button
+          onClick={onOpenMetricsModal}
+          className="btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          title="Ver auditoría de invariantes, eficiencia y métricas completas"
+        >
+          <BarChart3 size={15} style={{ color: 'var(--accent)' }} />
+          <span>Métricas & Benchmark</span>
+        </button>
+
+        {/* Botón Catálogo de Eventos */}
+        <button
+          onClick={onOpenEventsModal}
+          className="btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          title="Ver tabla y catálogo completo de eventos activos en el árbol"
+        >
+          <Database size={15} style={{ color: '#059669' }} />
+          <span>Eventos Sísmicos ({eventsCount})</span>
+        </button>
+
+        {/* Botón Cola FIFO de Telemetría */}
+        <button
+          onClick={onOpenQueueModal}
+          className="btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          title="Inspeccionar cola FIFO de telemetría y procesar ráfagas"
+        >
+          <Clock size={15} style={{ color: '#D97706' }} />
+          <span>Cola FIFO {queueCount > 0 ? `(${queueCount})` : ''}</span>
+        </button>
+
+        <div style={{ height: '22px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Botón Archivar Rama P3 */}
+        <button
+          onClick={onArchiveBranch}
+          className="btn-secondary"
+          style={{ padding: '6px 10px', fontSize: '0.76rem', color: 'var(--text-secondary)' }}
+          title="Podar y archivar rama elegible de baja prioridad (P3)"
+        >
+          <Scissors size={14} />
+          <span>Archivar P3</span>
+        </button>
+
+        {/* Botón Vaciar Árbol */}
+        <button
+          onClick={onClearTree}
+          className="btn-secondary"
+          style={{
+            padding: '6px 10px',
+            fontSize: '0.76rem',
+            backgroundColor: '#FEE2E2',
+            color: '#991B1B',
+            borderColor: '#FECACA'
+          }}
+          title="Vaciar totalmente el árbol AVL y BST para pruebas limpias (0 nodos)"
+        >
+          <Trash2 size={13} />
+          <span>Limpiar Árbol</span>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 5. ESQUINA INFERIOR DERECHA: HUD DE NAVEGACIÓN, ZOOM Y LEYENDA            */}
+      {/* ========================================================================= */}
+      <div style={{
+        position: 'absolute',
+        bottom: '16px',
+        right: '16px',
+        zIndex: 3000,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(10px)',
+        padding: '6px 12px',
+        borderRadius: '14px',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-lg)'
+      }}>
+        {/* Leyenda Didáctica Compacta */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
+          <span style={{ color: '#1D4ED8', fontWeight: 800 }}>← Menor</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ color: '#B91C1C', fontWeight: 800 }}>Mayor →</span>
+          <span style={{ color: 'var(--text-muted)' }}>•</span>
+          <span style={{ color: '#065F46', fontWeight: 700 }}>|FB| ≤ 1</span>
+        </div>
+
+        <div style={{ height: '20px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
+        {/* Telemetría de Paneo */}
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+          Pan: X={Math.round(pan.x)}, Y={Math.round(pan.y)}
+        </span>
+
+        {/* Controles de Zoom */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2px',
+          backgroundColor: '#F1F5F9',
+          padding: '2px 4px',
+          borderRadius: '8px'
+        }}>
+          <button
+            onClick={handleZoomOut}
+            className="btn-secondary"
+            style={{ padding: '3px 6px', border: 'none', background: '#FFFFFF', fontSize: '0.72rem' }}
+            title="Alejar (-)"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            onClick={handleResetView}
+            className="btn-secondary"
+            style={{ padding: '3px 7px', border: 'none', background: '#FFFFFF', fontSize: '0.72rem', fontWeight: 800 }}
+            title="Restablecer zoom al 100%"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={handleZoomIn}
+            className="btn-secondary"
+            style={{ padding: '3px 6px', border: 'none', background: '#FFFFFF', fontSize: '0.72rem' }}
+            title="Acercar (+)"
+          >
+            <ZoomIn size={13} />
+          </button>
+          <button
+            onClick={handleResetView}
+            className="btn-secondary"
+            style={{ padding: '3px 6px', border: 'none', background: '#FFFFFF', fontSize: '0.72rem', color: 'var(--accent)' }}
+            title="Centrar mapa en la raíz"
+          >
+            <Crosshair size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 6. EL CENTRO DESPEJADO: LIENZO INFINITO DEL MAPA TOPOLÓGICO SÍSMICO       */}
+      {/* ========================================================================= */}
+      <div
+        ref={mapContainerRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          backgroundColor: '#F8FAFC',
+          backgroundImage: 'radial-gradient(circle, #CBD5E1 1.2px, transparent 1.2px)',
+          backgroundSize: '24px 24px',
+          backgroundPosition: `${pan.x}px ${pan.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
+        {/* Superficie Transformable de los Árboles en el Centro */}
         <div style={{
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top center',
-          transition: 'transform 0.2s ease',
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
+          transition: isDragging ? 'none' : 'transform 0.15s ease-out',
           display: 'inline-flex',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          padding: '60px 80px',
+          minWidth: 'max-content'
         }}>
-          <TreeNode node={treeData} isRoot={true} onSelectNode={onSelectEvent} />
+          
+          {!hasAnyTree ? (
+            <div style={{
+              textAlign: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.65)',
+              backdropFilter: 'blur(16px)',
+              padding: '40px 48px',
+              borderRadius: 'var(--radius-xl)',
+              border: '2px dashed #CBD5E1',
+              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+              maxWidth: '440px'
+            }}>
+              <GitCommit size={48} style={{ color: 'var(--accent)', opacity: 0.4, marginBottom: '12px' }} />
+              <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                Árboles Vacíos (0 Nodos)
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5 }}>
+                Usa el botón <strong>"+ Nuevo Sismo"</strong> o <strong>"⚡ Sismos Predefinidos"</strong> en la esquina superior derecha para comenzar.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* MODO 1: DUAL (AMBOS ÁRBOLES EN PARALELO) */}
+              {viewMode === 'dual' && (
+                <div style={{
+                  display: 'flex',
+                  gap: '60px',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center'
+                }}>
+                  {/* Tarjeta Contenedora: Árbol AVL */}
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+                    backdropFilter: 'blur(16px)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '2px dashed var(--accent-border)',
+                    padding: '20px 24px',
+                    boxShadow: '0 10px 30px rgba(79, 70, 229, 0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minWidth: '460px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '16px',
+                      paddingBottom: '12px',
+                      borderBottom: '1px dashed #CBD5E1'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.3rem' }}>🌳</span>
+                        <div>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            Árbol AVL (Auto-balanceado)
+                          </h4>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                            Rotaciones activas automáticas en O(log n)
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        padding: '3px 10px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--p3-bg)',
+                        color: 'var(--p3-text)',
+                        border: '1px solid var(--p3-border)'
+                      }}>
+                        Altura h={avlHeight}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', minHeight: '260px' }}>
+                      {treeData ? (
+                        <TreeNode
+                          node={treeData}
+                          isRoot={true}
+                          onSelectNode={onSelectEvent}
+                          treeType="AVL"
+                          searchQuery={searchQuery}
+                        />
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', alignSelf: 'center' }}>AVL Vacío</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tarjeta Contenedora: Árbol BST */}
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+                    backdropFilter: 'blur(16px)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '2px dashed #94A3B8',
+                    padding: '20px 24px',
+                    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minWidth: '460px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '16px',
+                      paddingBottom: '12px',
+                      borderBottom: '1px dashed #CBD5E1'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.3rem' }}>🌱</span>
+                        <div>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            Árbol BST Clásico
+                          </h4>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                            Sin rotaciones (Inserción ingenua no rotada)
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        padding: '3px 10px',
+                        borderRadius: '8px',
+                        backgroundColor: bstHeight > avlHeight ? 'var(--p2-bg)' : '#F1F5F9',
+                        color: bstHeight > avlHeight ? 'var(--p2-text)' : 'var(--text-secondary)',
+                        border: `1px solid ${bstHeight > avlHeight ? 'var(--p2-border)' : '#CBD5E1'}`
+                      }}>
+                        {bstHeight > avlHeight ? '⚠️ Mayor Profundidad' : 'Sin Rotaciones'} | h={bstHeight}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', minHeight: '260px' }}>
+                      {bstData ? (
+                        <TreeNode
+                          node={bstData}
+                          isRoot={true}
+                          onSelectNode={onSelectEvent}
+                          treeType="BST"
+                          searchQuery={searchQuery}
+                        />
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', alignSelf: 'center' }}>BST Vacío</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MODO 2: SOLO AVL */}
+              {viewMode === 'avl' && (
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.65)',
+                  backdropFilter: 'blur(16px)',
+                  borderRadius: 'var(--radius-xl)',
+                  border: '2px dashed var(--accent-border)',
+                  padding: '24px 36px',
+                  boxShadow: '0 10px 30px rgba(79, 70, 229, 0.08)',
+                  display: 'inline-flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: 'max-content'
+                }}>
+                  <div style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px dashed #CBD5E1'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>🌳</span>
+                      <div>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Topología Completa: Árbol AVL Auto-balanceado
+                        </h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          Garantía matemática logarítmica de factor de balance |FB| ≤ 1 y profundidad mínima.
+                        </p>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--p3-bg)',
+                      color: 'var(--p3-text)',
+                      border: '1px solid var(--p3-border)'
+                    }}>
+                      Altura Total: h={avlHeight}
+                    </span>
+                  </div>
+
+                  {treeData ? (
+                    <TreeNode
+                      node={treeData}
+                      isRoot={true}
+                      onSelectNode={onSelectEvent}
+                      treeType="AVL"
+                      searchQuery={searchQuery}
+                    />
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '40px 0' }}>Árbol AVL Vacío</span>
+                  )}
+                </div>
+              )}
+
+              {/* MODO 3: SOLO BST */}
+              {viewMode === 'bst' && (
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.65)',
+                  backdropFilter: 'blur(16px)',
+                  borderRadius: 'var(--radius-xl)',
+                  border: '2px dashed #94A3B8',
+                  padding: '24px 36px',
+                  boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
+                  display: 'inline-flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: 'max-content'
+                }}>
+                  <div style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px dashed #CBD5E1'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>🌱</span>
+                      <div>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Topología Completa: Árbol Binario de Búsqueda (BST Clásico)
+                        </h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          Sin rotaciones. Los nodos con desbalance (|FB| &gt; 1) se destacan con borde rojo punteado.
+                        </p>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: bstHeight > avlHeight ? 'var(--p2-bg)' : '#F1F5F9',
+                      color: bstHeight > avlHeight ? 'var(--p2-text)' : 'var(--text-secondary)',
+                      border: `1px solid ${bstHeight > avlHeight ? 'var(--p2-border)' : '#CBD5E1'}`
+                    }}>
+                      Altura Total: h={bstHeight}
+                    </span>
+                  </div>
+
+                  {bstData ? (
+                    <TreeNode
+                      node={bstData}
+                      isRoot={true}
+                      onSelectNode={onSelectEvent}
+                      treeType="BST"
+                      searchQuery={searchQuery}
+                    />
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '40px 0' }}>Árbol BST Vacío</span>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
         </div>
       </div>
 

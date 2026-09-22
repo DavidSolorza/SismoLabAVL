@@ -1,51 +1,72 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Header from './components/Header';
-import MetricsBanner from './components/MetricsBanner';
-import QuickActions from './components/QuickActions';
-import QueueViewer from './components/QueueViewer';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import AVLVisualizer from './components/AVLVisualizer';
-import EventList from './components/EventList';
 import EventModal from './components/EventModal';
+import ModalDialog from './components/ModalDialog';
+import MetricsBanner from './components/MetricsBanner';
+import EventList from './components/EventList';
+import QueueViewer from './components/QueueViewer';
+import PresetsModal from './components/PresetsModal';
 import Toast from './components/Toast';
 
 import {
-  fetchMetrics, fetchEvents, fetchTreeHierarchy, createEvent, correctEvent,
-  enqueueReport, processNextReport, undoLastAction, archiveBranch, setOperationalMode,
-  clearAllTree
+  BarChart3, Database, Clock, Zap
+} from 'lucide-react';
+
+import {
+  fetchFullDashboardState, fetchMetrics, fetchEvents, fetchTreeHierarchy, fetchBstHierarchy,
+  createEvent, correctEvent, enqueueReport, processNextReport, undoLastAction, archiveBranch,
+  setOperationalMode, clearAllTree
 } from './services/apiService';
-import { PREDEFINED_EVENTS, getAvailableId } from './data/predefinedEvents';
+import { getAvailableId } from './data/predefinedEvents';
 
 export default function App() {
   const [metrics, setMetrics] = useState(null);
   const [events, setEvents] = useState([]);
   const [treeData, setTreeData] = useState(null);
+  const [bstData, setBstData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Estado de la Cola FIFO en UI
   const [queueItems, setQueueItems] = useState([]);
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estados de Modales del Sistema
+  const [isModalOpen, setIsModalOpen] = useState(false); // Crear / Corregir Sismo
   const [editEvent, setEditEvent] = useState(null);
+  const [isMetricsOpen, setIsMetricsOpen] = useState(false); // Métricas & Benchmark
+  const [isEventsOpen, setIsEventsOpen] = useState(false);   // Catálogo de Eventos
+  const [isQueueOpen, setIsQueueOpen] = useState(false);     // Cola FIFO de Telemetría
+  const [isPresetsOpen, setIsPresetsOpen] = useState(false); // Catálogo Rápido de Sismos
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
   };
 
+  // Carga atómica y optimizada del estado completo en una sola llamada HTTP
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [m, evs, tree] = await Promise.all([
-        fetchMetrics(),
-        fetchEvents(),
-        fetchTreeHierarchy()
-      ]);
-      setMetrics(m);
-      setEvents(evs);
-      setTreeData(tree);
+      const data = await fetchFullDashboardState();
+      setMetrics(data.metricas);
+      setEvents(data.eventos || []);
+      setTreeData(data.avl_tree);
+      setBstData(data.bst_tree);
     } catch (err) {
-      showToast(err.message || 'Error al conectar con el backend SismoLab', 'error');
+      // Fallback de contingencia a consultas paralelas separadas si el endpoint unificado fallase
+      try {
+        const [m, evs, tree, bst] = await Promise.all([
+          fetchMetrics(),
+          fetchEvents(),
+          fetchTreeHierarchy(),
+          fetchBstHierarchy()
+        ]);
+        setMetrics(m);
+        setEvents(evs);
+        setTreeData(tree);
+        setBstData(bst);
+      } catch (fallbackErr) {
+        showToast(fallbackErr.message || 'Error al conectar con el backend SismoLab', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -158,7 +179,6 @@ export default function App() {
   // Procesar ráfaga completa
   const handleProcessBatch = async () => {
     try {
-      // Procesar secuencialmente los reportes encolados
       const itemsToProcess = queueItems.length > 0 ? queueItems.length : 1;
       let lastMessage = 'Cola FIFO procesada';
       for (let i = 0; i < itemsToProcess; i++) {
@@ -166,7 +186,6 @@ export default function App() {
           const res = await processNextReport();
           lastMessage = res.message;
         } catch (e) {
-          // Si la cola en el servidor ya está vacía, detenerse
           break;
         }
       }
@@ -203,66 +222,165 @@ export default function App() {
     }
   };
 
+  // -------------------------------------------------------------------------
+  // GESTIÓN DINÁMICA DE LATERALES PARA MODALES MULTI-VENTANA COMPACTOS
+  // -------------------------------------------------------------------------
+  // Asigna cada modal a un lateral/esquina diferente (top-left, bottom-left,
+  // top-right, bottom-right) para que NUNCA se sobrepongan y mantengan el centro
+  // siempre 100% visible para interactuar con los árboles AVL y BST.
+  const modalSlots = useMemo(() => {
+    const preferences = {
+      eventModal: ['top-right', 'bottom-right', 'top-left', 'bottom-left'],
+      presets: ['bottom-right', 'top-right', 'bottom-left', 'top-left'],
+      metrics: ['top-left', 'bottom-left', 'top-right', 'bottom-right'],
+      events: ['bottom-left', 'top-left', 'bottom-right', 'top-right'],
+      queue: ['bottom-left', 'top-left', 'bottom-right', 'top-right']
+    };
+
+    const status = {
+      eventModal: isModalOpen,
+      presets: isPresetsOpen,
+      metrics: isMetricsOpen,
+      events: isEventsOpen,
+      queue: isQueueOpen
+    };
+
+    const assigned = {};
+    const occupied = new Set();
+
+    // Asignar slot a cada modal activo según sus preferencias
+    const activeKeys = Object.keys(status).filter(k => status[k]);
+
+    for (const key of activeKeys) {
+      const prefs = preferences[key] || ['top-right', 'bottom-right', 'top-left', 'bottom-left'];
+      const chosen = prefs.find(slot => !occupied.has(slot)) || prefs[0];
+      assigned[key] = chosen;
+      occupied.add(chosen);
+    }
+
+    // Determinar si en un lateral hay 2 modales para dividir altura o dar altura completa
+    const slotsInUse = Object.values(assigned);
+    const leftCount = slotsInUse.filter(s => s && s.includes('left')).length;
+    const rightCount = slotsInUse.filter(s => s && s.includes('right')).length;
+
+    const getHeight = (slot) => {
+      if (!slot) return 'calc(100vh - 156px)';
+      const isL = slot.includes('left');
+      const count = isL ? leftCount : rightCount;
+      return count > 1 ? 'calc(50vh - 86px)' : 'calc(100vh - 156px)';
+    };
+
+    return {
+      positions: assigned,
+      getHeight
+    };
+  }, [isModalOpen, isPresetsOpen, isMetricsOpen, isEventsOpen, isQueueOpen]);
+
   return (
-    <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '20px 16px 40px 16px' }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       
-      {/* Header Superior con Switch de Modo */}
-      <Header
-        currentMode={metrics?.modo_operacional || 'NORMAL'}
-        onToggleMode={handleToggleMode}
-        onRefresh={loadData}
-        loading={loading}
-      />
-
-      {/* Tarjetas de Métricas y Comparativa AVL vs BST */}
-      <MetricsBanner metrics={metrics} />
-
-      {/* Barra de Acciones Rápidas */}
-      <QuickActions
-        onOpenCreateModal={() => { setEditEvent(null); setIsModalOpen(true); }}
-        onUndo={handleUndo}
-        onProcessQueue={handleProcessQueue}
-        onArchiveBranch={handleArchiveBranch}
-        onEnqueueSample={handleEnqueueSample}
-        onQuickInsertPredefined={handleQuickInsertPredefined}
-        onClearTree={handleClearTree}
-      />
-
-      {/* Visualizador de la Cola FIFO de Telemetría */}
-      <QueueViewer
-        queueItems={queueItems}
-        onEnqueueSample={handleEnqueueSample}
-        onProcessNext={handleProcessQueue}
-        onProcessBatch={handleProcessBatch}
-        loading={loading}
-      />
-
-      {/* Visualizador Jerárquico del Árbol AVL */}
+      {/* 1. VISUALIZADOR PRINCIPAL: MAPA COMPLETO CON DOCKS PERIMETRALES EN ELIPSE */}
       <AVLVisualizer
         treeData={treeData}
+        bstData={bstData}
         onSelectEvent={(ev) => {
           setEditEvent(ev);
           setIsModalOpen(true);
         }}
+        // Triggers de Acciones y Modales
+        onOpenCreateModal={() => { setEditEvent(null); setIsModalOpen(true); }}
+        onOpenPresetsModal={() => setIsPresetsOpen(true)}
+        onOpenMetricsModal={() => setIsMetricsOpen(true)}
+        onOpenEventsModal={() => setIsEventsOpen(true)}
+        onOpenQueueModal={() => setIsQueueOpen(true)}
+        onUndo={handleUndo}
+        onArchiveBranch={handleArchiveBranch}
+        onClearTree={handleClearTree}
+        onToggleMode={handleToggleMode}
+        onRefresh={loadData}
+        currentMode={metrics?.modo_operacional || 'NORMAL'}
+        eventsCount={events.length}
+        queueCount={queueItems.length}
+        loading={loading}
       />
 
-      {/* Tabla del Catálogo de Eventos Sísmicos */}
-      <EventList
-        events={events}
-        onEditEvent={(ev) => {
-          setEditEvent(ev);
-          setIsModalOpen(true);
-        }}
-      />
+      {/* ========================================================================= */}
+      {/* MODALES LATERALES COMPACTOS (LIBERAN EL CENTRO Y SE MULTIPLEXAN EN ESQUINAS) */}
+      {/* ========================================================================= */}
 
-      {/* Modal Dialog de Creación y Corrección */}
+      {/* 1. Modal de Creación y Corrección de Sismos */}
       <EventModal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditEvent(null); }}
         onSubmit={handleModalSubmit}
         editEvent={editEvent}
         events={events}
+        position={modalSlots.positions.eventModal || 'top-right'}
+        maxHeight={modalSlots.getHeight(modalSlots.positions.eventModal)}
       />
+
+      {/* 2. Modal de Sismos Colombianos Predefinidos (1 Clic) */}
+      <PresetsModal
+        isOpen={isPresetsOpen}
+        onClose={() => setIsPresetsOpen(false)}
+        onSelectPreset={handleQuickInsertPredefined}
+        position={modalSlots.positions.presets || 'bottom-right'}
+        maxHeight={modalSlots.getHeight(modalSlots.positions.presets)}
+      />
+
+      {/* 3. Panel Lateral de Métricas y Benchmark AVL vs BST */}
+      <ModalDialog
+        isOpen={isMetricsOpen}
+        onClose={() => setIsMetricsOpen(false)}
+        title="Métricas AVL vs BST"
+        subtitle="Auditoría de eficiencia y alturas"
+        icon={BarChart3}
+        position={modalSlots.positions.metrics || 'top-left'}
+        maxWidth="350px"
+        maxHeight={modalSlots.getHeight(modalSlots.positions.metrics)}
+      >
+        <MetricsBanner metrics={metrics} />
+      </ModalDialog>
+
+      {/* 4. Panel Lateral de Catálogo de Eventos Sísmicos */}
+      <ModalDialog
+        isOpen={isEventsOpen}
+        onClose={() => setIsEventsOpen(false)}
+        title="Catálogo de Sismos"
+        subtitle="Recorrido In-Order en memoria"
+        icon={Database}
+        position={modalSlots.positions.events || 'bottom-left'}
+        maxWidth="350px"
+        maxHeight={modalSlots.getHeight(modalSlots.positions.events)}
+      >
+        <EventList
+          events={events}
+          onEditEvent={(ev) => {
+            setEditEvent(ev);
+            setIsModalOpen(true);
+          }}
+        />
+      </ModalDialog>
+
+      {/* 5. Panel Lateral de Cola FIFO de Telemetría */}
+      <ModalDialog
+        isOpen={isQueueOpen}
+        onClose={() => setIsQueueOpen(false)}
+        title="Cola FIFO Telemétrica"
+        subtitle="Buffer de ingesta secuencial"
+        icon={Clock}
+        position={modalSlots.positions.queue || 'bottom-left'}
+        maxWidth="350px"
+        maxHeight={modalSlots.getHeight(modalSlots.positions.queue)}
+      >
+        <QueueViewer
+          queueItems={queueItems}
+          onEnqueueSample={handleEnqueueSample}
+          onProcessNext={handleProcessQueue}
+          onProcessBatch={handleProcessBatch}
+          loading={loading}
+        />
+      </ModalDialog>
 
       {/* Notificaciones Flotantes Toast */}
       <Toast toast={toast} onClose={() => setToast(null)} />

@@ -17,7 +17,7 @@ export default function Toast({ toast, onClose }) {
 
   return (
     <div style={{
-      position: 'fixed', bottom: '24px', right: '24px', zIndex: 2000,
+      position: 'fixed', bottom: '24px', right: '24px', zIndex: 10001,
       backgroundColor: '#FFFFFF',
       border: `1px solid ${isError ? 'var(--p1-border)' : 'var(--p3-border)'}`,
       borderLeft: `4px solid ${isError ? 'var(--coral-soft)' : 'var(--emerald-soft)'}`,
