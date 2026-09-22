@@ -171,11 +171,8 @@ export default function App() {
         zona_poblada: Math.random() > 0.5
       };
 
-      const res = await enqueueReport(newReport);
+      await enqueueReport(newReport);
       setQueueItems(prev => [...prev, newReport]);
-      showToast(res.message || `Reporte SIS-${sampleId} encolado en FIFO`, 'success', {
-        title: 'Reporte Telemétrico Encolado'
-      });
     } catch (err) {
       showToast(err.message, 'error', { title: 'Error de Encolamiento' });
     }
