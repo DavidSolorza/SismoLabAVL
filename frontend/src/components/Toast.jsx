@@ -34,7 +34,7 @@ export default function Toast({ toast, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toast, isConfirm, onClose]);
 
-  if (!toast) return null;
+  if (!toast || toast.type === 'success') return null;
 
   const type = toast.type || 'success';
 

@@ -21,8 +21,8 @@ export default function ModalDialog({
   iconColor = 'var(--accent)',
   children,
   position = 'top-right',
-  maxWidth = '350px',
-  maxHeight = 'calc(100vh - 156px)'
+  maxWidth = '290px',
+  maxHeight = 'calc(100vh - 130px)'
 }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -39,22 +39,21 @@ export default function ModalDialog({
   const isLeft = position.includes('left');
   const isBottom = position.includes('bottom');
 
-  // Coordenadas calculadas para no invadir la barra superior (top: 16px + h: 48px = ~64px -> modal top: 74px)
-  // ni los docks inferiores (bottom: 16px + h: 48px = ~64px -> modal bottom: 74px)
+  // Coordenadas calculadas para el perímetro libre (62px en vez de 74px)
   const panelPlacementStyle = {
     position: 'absolute',
-    top: isBottom ? 'auto' : '74px',
-    bottom: isBottom ? '74px' : 'auto',
-    left: isLeft ? '16px' : 'auto',
-    right: !isLeft ? '16px' : 'auto',
+    top: isBottom ? 'auto' : '62px',
+    bottom: isBottom ? '62px' : 'auto',
+    left: isLeft ? '14px' : 'auto',
+    right: !isLeft ? '14px' : 'auto',
     width: maxWidth,
-    maxWidth: 'calc(100vw - 32px)',
+    maxWidth: 'calc(100vw - 28px)',
     maxHeight: maxHeight,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
-    borderRadius: '16px',
-    boxShadow: '0 12px 36px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(226, 232, 240, 0.85)',
+    borderRadius: '13px',
+    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.85)',
     border: '1px solid var(--border-subtle)',
     display: 'flex',
     flexDirection: 'column',
@@ -84,16 +83,16 @@ export default function ModalDialog({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '10px 14px',
+          padding: '8px 12px',
           borderBottom: '1px solid var(--border-subtle)',
           backgroundColor: 'rgba(248, 250, 252, 0.88)',
           flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, flex: 1 }}>
             {Icon && (
               <div style={{
-                padding: '5px',
-                borderRadius: '8px',
+                padding: '4px',
+                borderRadius: '7px',
                 backgroundColor: iconBg,
                 color: iconColor,
                 display: 'flex',
@@ -101,25 +100,23 @@ export default function ModalDialog({
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <Icon size={15} />
+                <Icon size={14} />
               </div>
             )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <h3 style={{
-                fontSize: '0.88rem',
+                fontSize: '0.84rem',
                 fontWeight: 800,
                 color: 'var(--text-primary)',
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                letterSpacing: '-0.01em',
+                lineHeight: 1.2
               }}>
                 {title}
               </h3>
               {subtitle && (
                 <p style={{
                   fontSize: '0.68rem',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--text-muted)',
                   marginTop: '1px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -135,24 +132,24 @@ export default function ModalDialog({
             onClick={onClose}
             className="btn-secondary"
             style={{
-              padding: '4px 7px',
-              borderRadius: '6px',
+              padding: '3px 6px',
+              borderRadius: '5px',
               border: 'none',
               background: '#FFFFFF',
               boxShadow: 'var(--shadow-sm)',
               cursor: 'pointer',
-              marginLeft: '6px',
+              marginLeft: '5px',
               flexShrink: 0
             }}
             title="Cerrar panel (ESC)"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         </div>
 
         {/* Contenido Compacto con Scroll Suave */}
         <div style={{
-          padding: '12px',
+          padding: '10px',
           overflowY: 'auto',
           flex: 1
         }}>

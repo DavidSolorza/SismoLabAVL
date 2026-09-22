@@ -39,6 +39,11 @@ export default function App() {
   const [isPresetsOpen, setIsPresetsOpen] = useState(false); // Catálogo Rápido de Sismos
 
   const showToast = (message, type = 'success', options = {}) => {
+    // Si es una operación exitosa de rutina ('success'), no mostrar toast invasivo
+    // ya que la UI se actualiza inmediatamente en tiempo real.
+    if (type === 'success') {
+      return;
+    }
     setToast({ message, type, ...options });
   };
 

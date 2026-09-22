@@ -62,24 +62,24 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      position: 'relative', margin: '0 12px'
+      position: 'relative', margin: '0 8px'
     }}>
       
       {/* Indicador de relación con el padre (Menor < o Mayor >) */}
       {relacion && (
         <div style={{
-          fontSize: '0.66rem',
+          fontSize: '0.62rem',
           fontWeight: 800,
-          padding: '2px 7px',
-          borderRadius: '6px',
-          marginBottom: '6px',
+          padding: '2px 6px',
+          borderRadius: '5px',
+          marginBottom: '5px',
           letterSpacing: '0.03em',
           backgroundColor: relacion === 'MENOR' ? '#EFF6FF' : '#FEF2F2',
           color: relacion === 'MENOR' ? '#1D4ED8' : '#B91C1C',
           border: `1px solid ${relacion === 'MENOR' ? '#BFDBFE' : '#FECACA'}`,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '3px',
+          gap: '2px',
           boxShadow: 'var(--shadow-sm)'
         }}>
           {relacion === 'MENOR' ? '← MENOR (<)' : 'MAYOR (>) →'}
@@ -94,8 +94,8 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
           onSelectNode(ev);
         }}
         style={{
-          padding: '11px 15px',
-          borderRadius: '14px',
+          padding: '8px 11px',
+          borderRadius: '11px',
           border: matchesSearch
             ? '3px solid #F59E0B'
             : (esDesbalanceado && treeType === 'BST' ? '2px dashed #EF4444' : `2px solid ${theme.cardBorder}`),
@@ -103,14 +103,14 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
             ? '#FEF3C7'
             : (esDesbalanceado && treeType === 'BST' ? '#FFF5F5' : '#FFFFFF'),
           boxShadow: matchesSearch
-            ? '0 0 0 4px rgba(245, 158, 11, 0.35), 0 8px 20px rgba(245, 158, 11, 0.2)'
-            : `0 4px 14px ${theme.cardShadow}`,
+            ? '0 0 0 3px rgba(245, 158, 11, 0.35), 0 6px 16px rgba(245, 158, 11, 0.2)'
+            : `0 3px 10px ${theme.cardShadow}`,
           cursor: 'pointer',
-          minWidth: '155px',
+          minWidth: '124px',
           textAlign: 'center',
           position: 'relative',
           zIndex: 10,
-          transform: matchesSearch ? 'scale(1.08)' : 'none',
+          transform: matchesSearch ? 'scale(1.06)' : 'none',
           transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
         }}
         title={`Clic para inspeccionar sismo SIS-${ev.id} (M=${mag}, P=${p})`}
@@ -165,55 +165,55 @@ function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = nu
 
         {/* Magnitud Sísmica Destacada */}
         <div style={{
-          fontSize: '1.2rem',
+          fontSize: '1.02rem',
           fontWeight: 800,
           color: 'var(--text-primary)',
           letterSpacing: '-0.02em',
-          margin: '2px 0'
+          margin: '1px 0'
         }}>
-          {mag} <span style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 700 }}>M</span>
+          {mag} <span style={{ fontSize: '0.74rem', color: 'var(--accent)', fontWeight: 700 }}>M</span>
         </div>
 
         {/* Clave Compuesta K = [M, P, I] */}
         <div style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: '0.74rem',
+          fontSize: '0.68rem',
           fontWeight: 700,
           color: 'var(--text-secondary)',
           backgroundColor: '#F8FAFC',
-          padding: '2px 5px',
-          borderRadius: '5px',
+          padding: '1px 4px',
+          borderRadius: '4px',
           border: '1px solid var(--border-subtle)',
-          margin: '3px 0'
+          margin: '2px 0'
         }}>
           K=({mag}M, P{p}, #{ev.id})
         </div>
 
         {/* Identificador y Altura */}
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>
           {ev.formatted_id || `SIS-${ev.id}`} • h={h}
         </div>
       </div>
 
       {/* Conexiones SVG y Subárboles Izquierdo / Derecho */}
       {(node.hijo_izquierdo || node.hijo_derecho) && (
-        <div style={{ width: '100%', marginTop: '12px' }}>
+        <div style={{ width: '100%', marginTop: '9px' }}>
           {/* Líneas de conexión */}
           <div style={{
             display: 'flex', justifyContent: 'space-around',
-            width: '100%', height: '22px', position: 'relative'
+            width: '100%', height: '18px', position: 'relative'
           }}>
-            <svg style={{ position: 'absolute', top: '-12px', left: 0, width: '100%', height: '34px', pointerEvents: 'none' }}>
+            <svg style={{ position: 'absolute', top: '-9px', left: 0, width: '100%', height: '28px', pointerEvents: 'none' }}>
               {node.hijo_izquierdo && (
-                <line x1="50%" y1="0" x2="25%" y2="34" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="50%" y1="0" x2="25%" y2="28" stroke="#94A3B8" strokeWidth="1.8" strokeDasharray="3 3" />
               )}
               {node.hijo_derecho && (
-                <line x1="50%" y1="0" x2="75%" y2="34" stroke="#94A3B8" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="50%" y1="0" x2="75%" y2="28" stroke="#94A3B8" strokeWidth="1.8" strokeDasharray="3 3" />
               )}
             </svg>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
             {/* Rama Izquierda (MENORES <) */}
             <div style={{ opacity: node.hijo_izquierdo ? 1 : 0.35 }}>
               {node.hijo_izquierdo ? (
@@ -374,69 +374,69 @@ export default function AVLVisualizer({
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
-        top: '16px',
-        left: '16px',
+        top: '12px',
+        left: '12px',
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '8px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '7px 14px',
-        borderRadius: '14px',
+        padding: '5px 11px',
+        borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
       }}>
         {/* Logotipo y Título */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           <div style={{
-            padding: '5px',
-            borderRadius: '9px',
+            padding: '4px',
+            borderRadius: '7px',
             backgroundColor: 'var(--accent-light)',
             color: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Activity size={18} />
+            <Activity size={15} />
           </div>
           <div>
-            <h1 style={{ fontSize: '0.96rem', fontWeight: 800, lineHeight: 1.1 }} className="gradient-text">
+            <h1 style={{ fontSize: '0.88rem', fontWeight: 800, lineHeight: 1.1 }} className="gradient-text">
               SismoLab AVL
             </h1>
-            <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Universidad de Caldas
             </span>
           </div>
         </div>
 
-        <div style={{ height: '24px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        <div style={{ height: '20px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
         {/* Conmutador de Modo Operacional (NORMAL <-> STRESS) */}
         <button
           onClick={onToggleMode}
           className="btn-secondary"
           style={{
-            padding: '4px 10px',
-            fontSize: '0.74rem',
+            padding: '3px 8px',
+            fontSize: '0.7rem',
             fontWeight: 800,
-            borderRadius: '8px',
+            borderRadius: '7px',
             backgroundColor: currentMode === 'NORMAL' ? 'var(--p3-bg)' : 'var(--p1-bg)',
             color: currentMode === 'NORMAL' ? 'var(--p3-text)' : 'var(--p1-text)',
             border: `1px solid ${currentMode === 'NORMAL' ? 'var(--p3-border)' : 'var(--p1-border)'}`
           }}
           title="Clic para alternar entre balance inmediato (NORMAL) y balance diferido (STRESS)"
         >
-          <Activity size={13} />
+          <Activity size={11} />
           <span>{currentMode}</span>
         </button>
 
         {/* Indicadores en Vivo de Altura */}
         <span style={{
-          fontSize: '0.72rem',
+          fontSize: '0.68rem',
           fontWeight: 800,
-          padding: '4px 8px',
-          borderRadius: '7px',
+          padding: '3px 7px',
+          borderRadius: '6px',
           backgroundColor: '#F1F5F9',
           color: 'var(--text-secondary)'
         }}>
@@ -447,7 +447,7 @@ export default function AVLVisualizer({
         <button
           onClick={onRefresh}
           className="btn-secondary"
-          style={{ padding: '5px 8px', border: 'none', background: '#F1F5F9', borderRadius: '7px' }}
+          style={{ padding: '4px 7px', border: 'none', background: '#F1F5F9', borderRadius: '6px' }}
           title="Sincronizar y recargar estado del sistema"
         >
           <RefreshCw size={13} className={loading ? 'spin-animation' : ''} style={{ color: 'var(--text-secondary)' }} />
@@ -455,21 +455,21 @@ export default function AVLVisualizer({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. SUPERIOR CENTRO: SELECTOR DE VISTAS Y BUSCADOR DE NODOS               */}
+      {/* 2. CENTRO SUPERIOR: SELECTOR DE VISTA DE ÁRBOLES Y BÚSQUEDA RÁPIDA       */}
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
-        top: '16px',
+        top: '12px',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: '8px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '5px 12px',
-        borderRadius: '14px',
+        padding: '4px 9px',
+        borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
       }}>
@@ -478,70 +478,70 @@ export default function AVLVisualizer({
           display: 'inline-flex',
           alignItems: 'center',
           backgroundColor: '#F1F5F9',
-          padding: '3px',
-          borderRadius: '9px',
-          gap: '3px'
+          padding: '2px',
+          borderRadius: '7px',
+          gap: '2px'
         }}>
           <button
             onClick={() => setViewMode('dual')}
             style={{
-              padding: '5px 12px',
-              fontSize: '0.78rem',
+              padding: '4px 9px',
+              fontSize: '0.74rem',
               fontWeight: 700,
-              borderRadius: '7px',
+              borderRadius: '6px',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '4px',
               backgroundColor: viewMode === 'dual' ? '#FFFFFF' : 'transparent',
               color: viewMode === 'dual' ? 'var(--accent)' : 'var(--text-secondary)',
               boxShadow: viewMode === 'dual' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            <Split size={14} />
+            <Split size={13} />
             <span>Ambos (Dual)</span>
           </button>
 
           <button
             onClick={() => setViewMode('avl')}
             style={{
-              padding: '5px 12px',
-              fontSize: '0.78rem',
+              padding: '4px 9px',
+              fontSize: '0.74rem',
               fontWeight: 700,
-              borderRadius: '7px',
+              borderRadius: '6px',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '4px',
               backgroundColor: viewMode === 'avl' ? '#FFFFFF' : 'transparent',
               color: viewMode === 'avl' ? 'var(--accent)' : 'var(--text-secondary)',
               boxShadow: viewMode === 'avl' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            <Layers size={14} />
+            <Layers size={13} />
             <span>Solo AVL</span>
           </button>
 
           <button
             onClick={() => setViewMode('bst')}
             style={{
-              padding: '5px 12px',
-              fontSize: '0.78rem',
+              padding: '4px 9px',
+              fontSize: '0.74rem',
               fontWeight: 700,
-              borderRadius: '7px',
+              borderRadius: '6px',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '4px',
               backgroundColor: viewMode === 'bst' ? '#FFFFFF' : 'transparent',
               color: viewMode === 'bst' ? 'var(--accent)' : 'var(--text-secondary)',
               boxShadow: viewMode === 'bst' ? 'var(--shadow-sm)' : 'none'
             }}
           >
-            <GitBranch size={14} />
+            <GitBranch size={13} />
             <span>Solo BST</span>
           </button>
         </div>
@@ -550,13 +550,13 @@ export default function AVLVisualizer({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '5px',
           backgroundColor: '#F1F5F9',
-          padding: '4px 10px',
-          borderRadius: '8px',
+          padding: '3px 8px',
+          borderRadius: '7px',
           border: '1px solid var(--border-subtle)'
         }}>
-          <Search size={14} style={{ color: 'var(--text-muted)' }} />
+          <Search size={13} style={{ color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="Buscar nodo (#ID, Mag)..."
@@ -566,8 +566,8 @@ export default function AVLVisualizer({
               border: 'none',
               background: 'transparent',
               outline: 'none',
-              fontSize: '0.76rem',
-              width: '150px',
+              fontSize: '0.72rem',
+              width: '130px',
               color: 'var(--text-primary)'
             }}
           />
@@ -577,7 +577,7 @@ export default function AVLVisualizer({
               style={{ border: 'none', background: 'transparent', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', color: 'var(--text-muted)' }}
               title="Limpiar búsqueda"
             >
-              <X size={12} />
+              <X size={11} />
             </button>
           )}
         </div>
@@ -588,16 +588,16 @@ export default function AVLVisualizer({
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
-        top: '16px',
-        right: '16px',
+        top: '12px',
+        right: '12px',
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '6px 10px',
-        borderRadius: '14px',
+        padding: '5px 8px',
+        borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-md)'
       }}>
@@ -605,9 +605,9 @@ export default function AVLVisualizer({
         <button
           onClick={onOpenCreateModal}
           className="btn-primary"
-          style={{ padding: '7px 14px', fontSize: '0.8rem', fontWeight: 700 }}
+          style={{ padding: '6px 11px', fontSize: '0.76rem', fontWeight: 700 }}
         >
-          <PlusCircle size={15} />
+          <PlusCircle size={14} />
           <span>+ Nuevo Sismo</span>
         </button>
 
@@ -616,8 +616,8 @@ export default function AVLVisualizer({
           onClick={onOpenPresetsModal}
           className="btn-secondary"
           style={{
-            padding: '7px 12px',
-            fontSize: '0.78rem',
+            padding: '6px 10px',
+            fontSize: '0.74rem',
             fontWeight: 700,
             backgroundColor: '#FEF3C7',
             color: '#92400E',
@@ -625,7 +625,7 @@ export default function AVLVisualizer({
           }}
           title="Abrir catálogo rápido de sismos colombianos predefinidos"
         >
-          <Sparkles size={14} style={{ color: '#D97706' }} />
+          <Sparkles size={13} style={{ color: '#D97706' }} />
           <span>Sismos Predefinidos</span>
         </button>
 
@@ -633,10 +633,10 @@ export default function AVLVisualizer({
         <button
           onClick={onUndo}
           className="btn-secondary"
-          style={{ padding: '7px 12px', fontSize: '0.78rem', fontWeight: 600 }}
+          style={{ padding: '6px 10px', fontSize: '0.74rem', fontWeight: 600 }}
           title="Revertir la última acción mediante la Pila LIFO"
         >
-          <Undo2 size={14} />
+          <Undo2 size={13} />
           <span>Deshacer</span>
         </button>
       </div>
@@ -646,16 +646,16 @@ export default function AVLVisualizer({
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
-        bottom: '16px',
-        left: '16px',
+        bottom: '12px',
+        left: '12px',
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '7px 12px',
-        borderRadius: '14px',
+        padding: '5px 9px',
+        borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)',
         flexWrap: 'wrap'
@@ -664,10 +664,10 @@ export default function AVLVisualizer({
         <button
           onClick={onOpenMetricsModal}
           className="btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          style={{ padding: '5px 9px', fontSize: '0.74rem', fontWeight: 700 }}
           title="Ver auditoría de invariantes, eficiencia y métricas completas"
         >
-          <BarChart3 size={15} style={{ color: 'var(--accent)' }} />
+          <BarChart3 size={13} style={{ color: 'var(--accent)' }} />
           <span>Métricas & Benchmark</span>
         </button>
 
@@ -675,10 +675,10 @@ export default function AVLVisualizer({
         <button
           onClick={onOpenEventsModal}
           className="btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          style={{ padding: '5px 9px', fontSize: '0.74rem', fontWeight: 700 }}
           title="Ver tabla y catálogo completo de eventos activos en el árbol"
         >
-          <Database size={15} style={{ color: '#059669' }} />
+          <Database size={13} style={{ color: '#059669' }} />
           <span>Eventos Sísmicos ({eventsCount})</span>
         </button>
 
@@ -686,23 +686,23 @@ export default function AVLVisualizer({
         <button
           onClick={onOpenQueueModal}
           className="btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+          style={{ padding: '5px 9px', fontSize: '0.74rem', fontWeight: 700 }}
           title="Inspeccionar cola FIFO de telemetría y procesar ráfagas"
         >
-          <Clock size={15} style={{ color: '#D97706' }} />
+          <Clock size={13} style={{ color: '#D97706' }} />
           <span>Cola FIFO {queueCount > 0 ? `(${queueCount})` : ''}</span>
         </button>
 
-        <div style={{ height: '22px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
         {/* Botón Archivar Rama P3 */}
         <button
           onClick={onArchiveBranch}
           className="btn-secondary"
-          style={{ padding: '6px 10px', fontSize: '0.76rem', color: 'var(--text-secondary)' }}
+          style={{ padding: '5px 8px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}
           title="Podar y archivar rama elegible de baja prioridad (P3)"
         >
-          <Scissors size={14} />
+          <Scissors size={12} />
           <span>Archivar P3</span>
         </button>
 
@@ -711,15 +711,15 @@ export default function AVLVisualizer({
           onClick={onClearTree}
           className="btn-secondary"
           style={{
-            padding: '6px 10px',
-            fontSize: '0.76rem',
+            padding: '5px 8px',
+            fontSize: '0.72rem',
             backgroundColor: '#FEE2E2',
             color: '#991B1B',
             borderColor: '#FECACA'
           }}
           title="Vaciar totalmente el árbol AVL y BST para pruebas limpias (0 nodos)"
         >
-          <Trash2 size={13} />
+          <Trash2 size={12} />
           <span>Limpiar Árbol</span>
         </button>
       </div>
@@ -729,16 +729,16 @@ export default function AVLVisualizer({
       {/* ========================================================================= */}
       <div style={{
         position: 'absolute',
-        bottom: '16px',
-        right: '16px',
+        bottom: '12px',
+        right: '12px',
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '8px',
         backgroundColor: 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(10px)',
-        padding: '6px 12px',
-        borderRadius: '14px',
+        padding: '5px 9px',
+        borderRadius: '11px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)'
       }}>
