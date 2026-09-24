@@ -26,12 +26,20 @@ class ImportarTopologiaCommand(Command):
 class ImportarTopologiaHandler:
     def handle(self, command: ImportarTopologiaCommand) -> Dict[str, Any]:
         datos = command.datos_topologia
+        if isinstance(datos, dict) and isinstance(datos.get("data"), dict):
+            datos = datos["data"]
+        elif isinstance(datos, dict) and isinstance(datos.get("estado"), dict):
+            datos = datos["estado"]
+
         if isinstance(datos, dict) and "topologia_avl" in datos and isinstance(datos["topologia_avl"], dict):
             topologia_raw = datos["topologia_avl"]
         elif isinstance(datos, dict):
             topologia_raw = datos
         else:
             raise DomainValidationException("Estructura de topología inválida (se esperaba objeto JSON).")
+
+        if not isinstance(topologia_raw.get("nodos"), (list, dict)):
+            raise DomainValidationException("El JSON no contiene una topología AVL válida bajo 'topologia_avl.nodos'.")
 
         nuevo_avl = ArbolAVL()
 

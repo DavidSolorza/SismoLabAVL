@@ -1,0 +1,951 @@
+{
+  "nombre": "Caso-completo",
+  "descripcion": "Prueba de persistencia y recuperación",
+  "guardado_en": "2026-09-24T22:28:04Z",
+  "estado": {
+    "reloj_simulacion": "2026-10-16T12:00:00Z",
+    "parametros": {
+      "w_horas": 48.0,
+      "r_km": 40.0,
+      "limite_l": 3,
+      "t_horas": 72.0
+    },
+    "eventos": [
+      {
+        "id": 4443,
+        "formatted_id": "SIS-004443",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 1.8,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-26T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 1.8,
+          "I": 4443,
+          "formatted_id": "SIS-004443"
+        },
+        "composite_key": "K=[P:1, M:1.8, I:4443]",
+        "candidatos_referencia": [
+          1113
+        ],
+        "evento_referencia_id": 1113,
+        "es_replica": true,
+        "acceso_costoso": false,
+        "costo_simulado": 3,
+        "antiguedad_segundos": 1728000,
+        "antiguedad_humana": "hace 20d"
+      },
+      {
+        "id": 1019,
+        "formatted_id": "SIS-001019",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 2.3,
+        "profundidad": 4.5,
+        "coordenadas": {
+          "x": 480.0,
+          "y": 540.0
+        },
+        "x": 480.0,
+        "y": 540.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-27T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 2.3,
+          "I": 1019,
+          "formatted_id": "SIS-001019"
+        },
+        "composite_key": "K=[P:1, M:2.3, I:1019]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 2,
+        "antiguedad_segundos": 1641600,
+        "antiguedad_humana": "hace 19d"
+      },
+      {
+        "id": 5146,
+        "formatted_id": "SIS-005146",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 2.3,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-BOGOTA-01",
+        "estaciones_reportantes": [
+          "EST-BOGOTA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-29T16:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 2.3,
+          "I": 5146,
+          "formatted_id": "SIS-005146"
+        },
+        "composite_key": "K=[P:1, M:2.3, I:5146]",
+        "candidatos_referencia": [
+          1013
+        ],
+        "evento_referencia_id": 1013,
+        "es_replica": true,
+        "acceso_costoso": false,
+        "costo_simulado": 4,
+        "antiguedad_segundos": 1454400,
+        "antiguedad_humana": "hace 16d"
+      },
+      {
+        "id": 1113,
+        "formatted_id": "SIS-001113",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.0,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": true,
+        "timestamp": "2026-09-25T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.0,
+          "I": 1113,
+          "formatted_id": "SIS-001113"
+        },
+        "composite_key": "K=[P:1, M:3.0, I:1113]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 3,
+        "antiguedad_segundos": 1814400,
+        "antiguedad_humana": "hace 21d"
+      },
+      {
+        "id": 1020,
+        "formatted_id": "SIS-001020",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.1,
+        "profundidad": 14.0,
+        "coordenadas": {
+          "x": 360.0,
+          "y": 530.0
+        },
+        "x": 360.0,
+        "y": 530.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-30T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.1,
+          "I": 1020,
+          "formatted_id": "SIS-001020"
+        },
+        "composite_key": "K=[P:1, M:3.1, I:1020]",
+        "candidatos_referencia": [
+          1013
+        ],
+        "evento_referencia_id": 1013,
+        "es_replica": true,
+        "acceso_costoso": false,
+        "costo_simulado": 4,
+        "antiguedad_segundos": 1382400,
+        "antiguedad_humana": "hace 16d"
+      },
+      {
+        "id": 1013,
+        "formatted_id": "SIS-001013",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.4,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-28T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.4,
+          "I": 1013,
+          "formatted_id": "SIS-001013"
+        },
+        "composite_key": "K=[P:1, M:3.4, I:1013]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 1,
+        "antiguedad_segundos": 1555200,
+        "antiguedad_humana": "hace 18d"
+      },
+      {
+        "id": 1021,
+        "formatted_id": "SIS-001021",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.4,
+        "profundidad": 22.0,
+        "coordenadas": {
+          "x": 680.0,
+          "y": 950.0
+        },
+        "x": 680.0,
+        "y": 950.0,
+        "estacion_id": "EST-SANTA-MARTA-01",
+        "estaciones_reportantes": [
+          "EST-SANTA-MARTA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-30T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.4,
+          "I": 1021,
+          "formatted_id": "SIS-001021"
+        },
+        "composite_key": "K=[P:1, M:3.4, I:1021]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 4,
+        "antiguedad_segundos": 1382400,
+        "antiguedad_humana": "hace 16d"
+      },
+      {
+        "id": 2640,
+        "formatted_id": "SIS-002640",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.7,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-22T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.7,
+          "I": 2640,
+          "formatted_id": "SIS-002640"
+        },
+        "composite_key": "K=[P:1, M:3.7, I:2640]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 3,
+        "antiguedad_segundos": 2073600,
+        "antiguedad_humana": "hace 24d"
+      },
+      {
+        "id": 1022,
+        "formatted_id": "SIS-001022",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.8,
+        "profundidad": 110.0,
+        "coordenadas": {
+          "x": 520.0,
+          "y": 460.0
+        },
+        "x": 520.0,
+        "y": 460.0,
+        "estacion_id": "EST-BOGOTA-01",
+        "estaciones_reportantes": [
+          "EST-BOGOTA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-28T15:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.8,
+          "I": 1022,
+          "formatted_id": "SIS-001022"
+        },
+        "composite_key": "K=[P:1, M:3.8, I:1022]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 2,
+        "antiguedad_segundos": 1544400,
+        "antiguedad_humana": "hace 17d"
+      },
+      {
+        "id": 1010,
+        "formatted_id": "SIS-001010",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 4.0,
+        "profundidad": 18.0,
+        "coordenadas": {
+          "x": 240.0,
+          "y": 250.0
+        },
+        "x": 240.0,
+        "y": 250.0,
+        "estacion_id": "EST-ARMENIA-01",
+        "estaciones_reportantes": [
+          "EST-ARMENIA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": true,
+        "timestamp": "2026-09-30T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 4.0,
+          "I": 1010,
+          "formatted_id": "SIS-001010"
+        },
+        "composite_key": "K=[P:1, M:4.0, I:1010]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 3,
+        "antiguedad_segundos": 1382400,
+        "antiguedad_humana": "hace 16d"
+      },
+      {
+        "id": 8438,
+        "formatted_id": "SIS-008438",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 4.3,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 380.0,
+          "y": 520.0
+        },
+        "x": 380.0,
+        "y": 520.0,
+        "estacion_id": "EST-BOGOTA-01",
+        "estaciones_reportantes": [
+          "EST-BOGOTA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-30T12:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 4.3,
+          "I": 8438,
+          "formatted_id": "SIS-008438"
+        },
+        "composite_key": "K=[P:1, M:4.3, I:8438]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 4,
+        "antiguedad_segundos": 1382400,
+        "antiguedad_humana": "hace 16d"
+      }
+    ],
+    "archivados": [],
+    "eliminados": [],
+    "topologia_avl": {
+      "raiz_id": 1013,
+      "total_nodos": 11,
+      "modo": "NORMAL",
+      "altura_arbol": 3,
+      "nodos": [
+        {
+          "id": 1013,
+          "evento": {
+            "id": 1013,
+            "formatted_id": "SIS-001013",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.4,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-28T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.4,
+              "I": 1013,
+              "formatted_id": "SIS-001013"
+            },
+            "composite_key": "K=[P:1, M:3.4, I:1013]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 1
+          },
+          "altura": 3,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": 1019,
+          "hijo_derecho_id": 1022
+        },
+        {
+          "id": 1019,
+          "evento": {
+            "id": 1019,
+            "formatted_id": "SIS-001019",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 2.3,
+            "profundidad": 4.5,
+            "coordenadas": {
+              "x": 480.0,
+              "y": 540.0
+            },
+            "x": 480.0,
+            "y": 540.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-27T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 2.3,
+              "I": 1019,
+              "formatted_id": "SIS-001019"
+            },
+            "composite_key": "K=[P:1, M:2.3, I:1019]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 2
+          },
+          "altura": 2,
+          "factor_balance": -1,
+          "hijo_izquierdo_id": 4443,
+          "hijo_derecho_id": 1113
+        },
+        {
+          "id": 1022,
+          "evento": {
+            "id": 1022,
+            "formatted_id": "SIS-001022",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.8,
+            "profundidad": 110.0,
+            "coordenadas": {
+              "x": 520.0,
+              "y": 460.0
+            },
+            "x": 520.0,
+            "y": 460.0,
+            "estacion_id": "EST-BOGOTA-01",
+            "estaciones_reportantes": [
+              "EST-BOGOTA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-28T15:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.8,
+              "I": 1022,
+              "formatted_id": "SIS-001022"
+            },
+            "composite_key": "K=[P:1, M:3.8, I:1022]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 2
+          },
+          "altura": 2,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": 2640,
+          "hijo_derecho_id": 1010
+        },
+        {
+          "id": 4443,
+          "evento": {
+            "id": 4443,
+            "formatted_id": "SIS-004443",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 1.8,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-26T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 1.8,
+              "I": 4443,
+              "formatted_id": "SIS-004443"
+            },
+            "composite_key": "K=[P:1, M:1.8, I:4443]",
+            "candidatos_referencia": [
+              1113
+            ],
+            "evento_referencia_id": 1113,
+            "es_replica": true,
+            "acceso_costoso": false,
+            "costo_simulado": 3
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 1113,
+          "evento": {
+            "id": 1113,
+            "formatted_id": "SIS-001113",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.0,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": true,
+            "timestamp": "2026-09-25T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.0,
+              "I": 1113,
+              "formatted_id": "SIS-001113"
+            },
+            "composite_key": "K=[P:1, M:3.0, I:1113]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 3
+          },
+          "altura": 1,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": 5146,
+          "hijo_derecho_id": 1020
+        },
+        {
+          "id": 2640,
+          "evento": {
+            "id": 2640,
+            "formatted_id": "SIS-002640",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.7,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-22T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.7,
+              "I": 2640,
+              "formatted_id": "SIS-002640"
+            },
+            "composite_key": "K=[P:1, M:3.7, I:2640]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 3
+          },
+          "altura": 1,
+          "factor_balance": 1,
+          "hijo_izquierdo_id": 1021,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 1010,
+          "evento": {
+            "id": 1010,
+            "formatted_id": "SIS-001010",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 4.0,
+            "profundidad": 18.0,
+            "coordenadas": {
+              "x": 240.0,
+              "y": 250.0
+            },
+            "x": 240.0,
+            "y": 250.0,
+            "estacion_id": "EST-ARMENIA-01",
+            "estaciones_reportantes": [
+              "EST-ARMENIA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": true,
+            "timestamp": "2026-09-30T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 4.0,
+              "I": 1010,
+              "formatted_id": "SIS-001010"
+            },
+            "composite_key": "K=[P:1, M:4.0, I:1010]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 3
+          },
+          "altura": 1,
+          "factor_balance": -1,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": 8438
+        },
+        {
+          "id": 5146,
+          "evento": {
+            "id": 5146,
+            "formatted_id": "SIS-005146",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 2.3,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-BOGOTA-01",
+            "estaciones_reportantes": [
+              "EST-BOGOTA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-29T16:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 2.3,
+              "I": 5146,
+              "formatted_id": "SIS-005146"
+            },
+            "composite_key": "K=[P:1, M:2.3, I:5146]",
+            "candidatos_referencia": [
+              1013
+            ],
+            "evento_referencia_id": 1013,
+            "es_replica": true,
+            "acceso_costoso": false,
+            "costo_simulado": 4
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 1020,
+          "evento": {
+            "id": 1020,
+            "formatted_id": "SIS-001020",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.1,
+            "profundidad": 14.0,
+            "coordenadas": {
+              "x": 360.0,
+              "y": 530.0
+            },
+            "x": 360.0,
+            "y": 530.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-30T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.1,
+              "I": 1020,
+              "formatted_id": "SIS-001020"
+            },
+            "composite_key": "K=[P:1, M:3.1, I:1020]",
+            "candidatos_referencia": [
+              1013
+            ],
+            "evento_referencia_id": 1013,
+            "es_replica": true,
+            "acceso_costoso": false,
+            "costo_simulado": 4
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 1021,
+          "evento": {
+            "id": 1021,
+            "formatted_id": "SIS-001021",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.4,
+            "profundidad": 22.0,
+            "coordenadas": {
+              "x": 680.0,
+              "y": 950.0
+            },
+            "x": 680.0,
+            "y": 950.0,
+            "estacion_id": "EST-SANTA-MARTA-01",
+            "estaciones_reportantes": [
+              "EST-SANTA-MARTA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-30T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.4,
+              "I": 1021,
+              "formatted_id": "SIS-001021"
+            },
+            "composite_key": "K=[P:1, M:3.4, I:1021]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 4
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 8438,
+          "evento": {
+            "id": 8438,
+            "formatted_id": "SIS-008438",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 4.3,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 380.0,
+              "y": 520.0
+            },
+            "x": 380.0,
+            "y": 520.0,
+            "estacion_id": "EST-BOGOTA-01",
+            "estaciones_reportantes": [
+              "EST-BOGOTA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-30T12:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 4.3,
+              "I": 8438,
+              "formatted_id": "SIS-008438"
+            },
+            "composite_key": "K=[P:1, M:4.3, I:8438]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 4
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        }
+      ]
+    }
+  }
+}
