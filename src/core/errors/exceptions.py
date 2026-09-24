@@ -71,3 +71,13 @@ class HandlerNotFoundException(SismoLabException):
             message=f"No hay un Handler registrado para el comando: {command_name}. / No handler registered for command: {command_name}.",
             code="HANDLER_NOT_FOUND"
         )
+
+
+class DuplicateEventIdException(EventAlreadyExistsException):
+    pass
+
+
+class DomainValidationException(DomainException):
+    def __init__(self, message: str):
+        super().__init__(message=message, code="VALIDATION_ERROR")
+

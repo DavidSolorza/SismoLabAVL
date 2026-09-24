@@ -1,38 +1,69 @@
 # -*- coding: utf-8 -*-
 """
-Coordinates Value Object / Objeto de Valor de Coordenadas Geográficas
+Coordinates Value Object / Objeto de Valor de Coordenadas Cartesianas
 SismoLab AVL - Universidad de Caldas
+
+Epicentro: Coordenadas x e y en km, entre 0,0 y 1000,0 con máximo un decimal.
+Permiten determinar la pertenencia a zonas y el cálculo euclidiano de distancias.
 """
 
-class GeographicCoordinates:
-    """
-    Coordenadas Geográficas Inmutables (Latitud, Longitud)
-    Immutable Geographic Coordinates (Latitude, Longitude)
-    """
-    __slots__ = ('_latitude', '_longitude')
+import math
+from typing import Dict, Any
 
-    def __init__(self, latitude: float, longitude: float):
-        if not (-90.0 <= latitude <= 90.0):
-            raise ValueError(f"Latitud inválida: {latitude}. Debe estar entre -90.0 y 90.0")
-        if not (-180.0 <= longitude <= 180.0):
-            raise ValueError(f"Longitud inválida: {longitude}. Debe estar entre -180.0 y 180.0")
+class CartesianCoordinates:
+    """
+    Coordenadas Cartesianas Inmutables en km (x, y) en el plano [0.0, 1000.0]
+    Immutable Cartesian Coordinates in km (x, y) in range [0.0, 1000.0]
+    """
+    __slots__ = ('_x', '_y')
 
-        self._latitude = round(float(latitude), 5)
-        self._longitude = round(float(longitude), 5)
+    def __init__(self, x: float, y: float):
+        x_val = round(abs(float(x)), 1)
+        y_val = round(abs(float(y)), 1)
+
+        if not (0.0 <= x_val <= 1000.0):
+            raise ValueError(f"Coordenada X fuera de rango: {x_val}. Debe estar entre 0.0 y 1000.0 km.")
+        if not (0.0 <= y_val <= 1000.0):
+            raise ValueError(f"Coordenada Y fuera de rango: {y_val}. Debe estar entre 0.0 y 1000.0 km.")
+
+        self._x = x_val
+        self._y = y_val
 
     @property
+    def x(self) -> float:
+        return self._x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    # Compatibilidad con accesos previos
+    @property
     def latitude(self) -> float:
-        return self._latitude
+        return self._y
 
     @property
     def longitude(self) -> float:
-        return self._longitude
+        return self._x
 
-    def to_dict(self) -> dict:
+    def distancia_a(self, otra: 'CartesianCoordinates') -> float:
+        """Calcula la distancia euclidiana en km a otra coordenada"""
+        return round(math.sqrt((self._x - otra.x) ** 2 + (self._y - otra.y) ** 2), 1)
+
+    def to_dict(self) -> Dict[str, float]:
         return {
-            "latitude": self._latitude,
-            "longitude": self._longitude
+            "x": self._x,
+            "y": self._y
         }
 
     def __repr__(self) -> str:
-        return f"Coordenadas(Lat={self._latitude}, Lon={self._longitude})"
+        return f"Coordenadas(x={self._x:.1f} km, y={self._y:.1f} km)"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, CartesianCoordinates):
+            return self._x == other.x and self._y == other.y
+        return False
+
+
+# Alias para retrocompatibilidad
+GeographicCoordinates = CartesianCoordinates

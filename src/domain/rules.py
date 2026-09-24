@@ -1,34 +1,63 @@
 # -*- coding: utf-8 -*-
 """
-Seismic Priority Domain Rules / Reglas de Dominio de Prioridad Sísmica
+Seismic Priority and Spatial Domain Rules / Reglas de Dominio de Prioridad y Clasificación Espacial
 SismoLab AVL - Universidad de Caldas
 
-Este módulo implementa el cálculo automático de la Prioridad P (1, 2, 3) basado en:
-- Magnitud M
-- Profundidad D (Superficial <= 30km aumenta el riesgo)
-- Zona Poblada (Impacto habitado aumenta el riesgo)
+Sección 3 & 4 de la especificación técnica oficial:
+- Las zonas son rectángulos en un plano de 0 a 1000 km en ambos ejes.
+- Un epicentro pertenece a una zona cuando está dentro de ella o sobre su borde.
+- Cuando está en el borde de dos zonas, se clasifica como zona poblada si alguna de las dos está definida de esa forma.
+
+Cálculo obligatorio de la prioridad:
+- Prioridad 3 (Alta): M >= 6.0; o bien M >= 4.5 y H <= 30.0 km y epicentro en zona poblada.
+- Prioridad 2 (Media): No cumple la condición de prioridad alta y M >= 4.5.
+- Prioridad 1 (Baja): No cumple ninguna de las condiciones anteriores.
+Todos los límites son inclusivos.
 """
+
+from typing import List
+from src.domain.entities.zone import ScenarioZone
+
+def is_point_in_populated_zone(x: float, y: float, zones: List[ScenarioZone]) -> bool:
+    """
+    Evalúa si las coordenadas (x, y) pertenecen a una zona poblada.
+    Si el punto cae en el borde compartido de dos zonas y al menos una es poblada,
+    se clasifica estrictamente como zona poblada.
+    """
+    x_val = round(float(x), 1)
+    y_val = round(float(y), 1)
+
+    zonas_que_contienen = [z for z in zones if z.contains_point(x_val, y_val)]
+    
+    # Si alguna de las zonas en las que se ubica el punto es poblada, retorna True
+    for z in zonas_que_contienen:
+        if z.is_populated:
+            return True
+
+    return False
+
 
 def calculate_seismic_priority(magnitude: float, depth: float, is_populated_zone: bool) -> int:
     """
-    Calcula la prioridad sísmica P in mutable en el conjunto {1, 2, 3}:
-    - Priority 1 (Alta/Crítico / High/Critical):
-      * Magnitud M >= 6.0 O (M >= 5.0 en zona poblada con profundidad superficial <= 30km)
-    - Priority 2 (Media / Medium):
-      * Magnitud 4.0 <= M < 6.0 O (M >= 3.5 en zona poblada)
-    - Priority 3 (Baja / Low):
-      * Sismos menores M < 4.0 en zonas no pobladas o profundos.
+    Calcula la prioridad sísmica obligatoria P en el conjunto {3, 2, 1}:
+    - 3 (Alta): M >= 6.0; o bien (M >= 4.5 y H <= 30.0 km y epicentro en zona poblada).
+    - 2 (Media): No cumple alta y M >= 4.5.
+    - 1 (Baja): No cumple ninguna de las anteriores.
 
-    Returns:
-      int: 1, 2, o 3
+    Los límites son inclusivos.
+    Por ejemplo, M = 4.5 y H = 30.0 km en zona poblada produce prioridad 3.
+    El mismo evento fuera de una zona poblada produce prioridad 2.
     """
-    # Sismos de gran magnitud o sismos moderados superficiales en áreas habitadas
-    if magnitude >= 6.0 or (magnitude >= 5.0 and is_populated_zone and depth <= 30.0):
-        return 1
-    
-    # Sismos intermedios o moderados habitados
-    if magnitude >= 4.0 or (magnitude >= 3.5 and is_populated_zone):
+    m = round(float(magnitude), 1)
+    h = round(float(depth), 1)
+
+    # 1. Condición de Prioridad 3 (Alta)
+    if m >= 6.0 or (m >= 4.5 and h <= 30.0 and is_populated_zone):
+        return 3
+
+    # 2. Condición de Prioridad 2 (Media)
+    if m >= 4.5:
         return 2
 
-    # Sismos de menor intensidad o profundos no poblados
-    return 3
+    # 3. Prioridad 1 (Baja)
+    return 1

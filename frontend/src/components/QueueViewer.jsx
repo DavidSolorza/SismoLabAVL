@@ -3,10 +3,12 @@ import { ArrowRight, Play, ArrowDownToLine, Radio, Clock, CheckCircle2 } from 'l
 
 export default function QueueViewer({
   onEnqueueSample,
+  onEnqueueTestBurst,
   onProcessNext,
   onProcessBatch,
   queueItems = [],
-  loading = false
+  loading = false,
+  lastStepReport = null
 }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -34,34 +36,74 @@ export default function QueueViewer({
           onClick={onEnqueueSample}
           disabled={loading || isProcessing}
           style={{ padding: '6px 8px', fontSize: '0.74rem', justifyContent: 'center' }}
-          title="Encolar reporte telemétrico sintético"
+          title="Encolar reporte telemétrico sintético individual"
         >
           <Radio size={13} style={{ color: '#D97706' }} />
-          <span>+ Encolar</span>
+          <span>+ Encolar 1</span>
         </button>
 
+        {onEnqueueTestBurst && (
+          <button
+            className="btn-secondary"
+            onClick={onEnqueueTestBurst}
+            disabled={loading || isProcessing}
+            style={{ padding: '6px 8px', fontSize: '0.74rem', justifyContent: 'center', borderColor: '#C7D2FE', backgroundColor: '#EEF2FF' }}
+            title="Encolar ráfaga de prueba mixta (5 reportes: altas y correcciones de varias estaciones)"
+          >
+            <Radio size={13} style={{ color: '#4F46E5' }} />
+            <span style={{ color: '#4338CA', fontWeight: 700 }}>+ Ráfaga (5)</span>
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
         <button
           className="btn-secondary"
           onClick={onProcessNext}
           disabled={loading || isProcessing || queueItems.length === 0}
           style={{ padding: '6px 8px', fontSize: '0.74rem', justifyContent: 'center', borderColor: 'var(--accent-border)' }}
-          title="Desencolar 1 reporte e insertarlo en el árbol"
+          title="Desencolar 1 reporte e insertarlo en el árbol (reporte paso a paso)"
         >
           <ArrowDownToLine size={13} style={{ color: 'var(--accent)' }} />
           <span style={{ color: 'var(--accent)', fontWeight: 700 }}>Paso a Paso</span>
         </button>
+
+        <button
+          className="btn-primary"
+          onClick={handleBatchClick}
+          disabled={loading || isProcessing || queueItems.length === 0}
+          style={{ padding: '6px 8px', fontSize: '0.74rem', justifyContent: 'center', fontWeight: 700 }}
+          title="Procesar ráfaga telemétrica completa"
+        >
+          <Play size={13} />
+          <span>{isProcessing ? 'Procesando...' : `Todo (${queueItems.length})`}</span>
+        </button>
       </div>
 
-      <button
-        className="btn-primary"
-        onClick={handleBatchClick}
-        disabled={loading || isProcessing || queueItems.length === 0}
-        style={{ width: '100%', padding: '7px 10px', fontSize: '0.78rem', justifyContent: 'center', fontWeight: 700 }}
-        title="Procesar ráfaga telemétrica completa"
-      >
-        <Play size={13} />
-        <span>{isProcessing ? 'Procesando ráfaga...' : `Procesar Ráfaga (${queueItems.length})`}</span>
-      </button>
+      {/* Informe Paso a Paso: Estación, Event ID, Revisión, Decisión y Rotaciones (Sección 8) */}
+      {lastStepReport && (
+        <div style={{
+          backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px',
+          border: '1px solid #E2E8F0', fontSize: '0.70rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <span style={{ fontWeight: 800, color: 'var(--text-secondary)' }}>Último Paso Procesado:</span>
+            <span style={{
+              fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px',
+              backgroundColor: lastStepReport.rotaciones_producidas > 0 ? '#FEF3C7' : '#DCFCE7',
+              color: lastStepReport.rotaciones_producidas > 0 ? '#92400E' : '#166534'
+            }}>
+              {lastStepReport.rotaciones_producidas ?? 0} Rotaciones
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', color: 'var(--text-secondary)' }}>
+            <div><strong>Estación:</strong> {lastStepReport.estacion || 'N/A'}</div>
+            <div><strong>Evento:</strong> SIS-{lastStepReport.event_id || 'N/A'}</div>
+            <div><strong>Revisión:</strong> Rev {lastStepReport.revision || 1}</div>
+            <div><strong>Decisión:</strong> <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{lastStepReport.decision || 'PROCESADO'}</span></div>
+          </div>
+        </div>
+      )}
 
       {/* Lista de Elementos en Cola (Vertical u Horizontal Compacta) */}
       <div style={{

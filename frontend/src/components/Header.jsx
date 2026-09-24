@@ -1,7 +1,7 @@
 import React from 'react';
-import { Activity, Cpu, RefreshCw, Layers, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Activity, Cpu, RefreshCw, Layers, ShieldCheck, AlertCircle, Sliders, Wrench } from 'lucide-react';
 
-export default function Header({ currentMode, onToggleMode, onRefresh, loading }) {
+export default function Header({ currentMode, onToggleMode, onRefresh, loading, onOpenParams, onRecoverStress }) {
   const isNormal = currentMode === 'NORMAL';
 
   return (
@@ -40,7 +40,33 @@ export default function Header({ currentMode, onToggleMode, onRefresh, loading }
         </div>
 
         {/* Controles de Acción y Switch de Modo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Botón de Parámetros del Escenario (W, R, L, T) */}
+          {onOpenParams && (
+            <button
+              className="btn-secondary"
+              onClick={onOpenParams}
+              title="Configurar parámetros reactivos del escenario: W (horas), R (km), L (acceso), T (archivo)"
+              style={{ borderColor: '#FDE68A', backgroundColor: '#FFFBEB' }}
+            >
+              <Sliders size={16} style={{ color: '#D97706' }} />
+              <span style={{ color: '#B45309', fontWeight: 700 }}>Parámetros</span>
+            </button>
+          )}
+
+          {/* Botón de Recuperar Balance si estamos en Modo Estrés */}
+          {!isNormal && onRecoverStress && (
+            <button
+              className="btn-secondary"
+              onClick={onRecoverStress}
+              title="Restaurar balance AVL total mediante pasadas iterativas de rotación conservando el orden BST"
+              style={{ borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' }}
+            >
+              <Wrench size={16} style={{ color: '#166534' }} />
+              <span style={{ color: '#166534', fontWeight: 700 }}>Recuperar Balance</span>
+            </button>
+          )}
+
           {/* Botón de Actualizar Datos */}
           <button className="btn-secondary" onClick={onRefresh} disabled={loading} title="Actualizar datos desde el backend">
             <RefreshCw size={16} className={loading ? 'spin-animation' : ''} style={{ color: 'var(--accent)' }} />

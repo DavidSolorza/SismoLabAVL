@@ -46,6 +46,7 @@ def test_slice_crear_y_corregir_evento():
     res_corregir = global_command_bus.dispatch(CorregirEventoCommand(dto_corregir))
     assert res_corregir["success"] is True
     assert res_corregir["data"]["evento"]["magnitud"] == 7.5
+    assert res_corregir["data"]["evento"]["version"] == 2
 
     # 3. Slice: Deshacer Corrección
     res_undo = global_command_bus.dispatch(DeshacerAccionCommand())
@@ -67,8 +68,9 @@ def test_slice_procesar_reporte_y_archivar():
     assert store.report_queue.size() == 0
     assert store.avl_tree.contar_nodos() == 1
 
-    # 3. Slice: Archivar Rama de Baja Prioridad
-    dto_archivar = ArchivarRamaDTO(prioridad_minima=3, guardar_json=False)
+    # 3. Slice: Archivar Rama de Baja Prioridad (Sección 10 exige antigüedad > T=72h)
+    store.advance_simulation_clock(hours=80)
+    dto_archivar = ArchivarRamaDTO(guardar_json=False)
     res_arch = global_command_bus.dispatch(ArchivarRamaCommand(dto_archivar))
     assert res_arch["success"] is True
     assert res_arch["data"]["nodos_archivados"] == 1

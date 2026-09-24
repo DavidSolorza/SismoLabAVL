@@ -19,7 +19,7 @@ This document formally specifies the HTTP RESTful contracts for interacting with
 
 #### 2.1. Slice: Crear Evento Sísmico (`POST /api/v1/eventos`)
 **Comando:** `CrearEventoCommand`  
-**Descripción:** Registra un nuevo evento sísmico en el sistema, calcula su clave $K = (P, M, I)$ e inserta el nodo en el árbol AVL (y en el BST de benchmarking).
+**Descripción:** Registra un nuevo evento sísmico en el sistema. Evalúa la pertenencia a zonas pobladas con base en las coordenadas cartesianas $(x, y)$, calcula la prioridad obligatoria de la Sección 4 ($P \in \{1, 2, 3\}$), calcula la clave $K = (P, M, I)$ e inserta el nodo en el árbol AVL (y en el BST de benchmarking).
 
 ##### Request Payload (JSON):
 ```json
@@ -27,10 +27,10 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   "id": 1001,
   "magnitud": 6.5,
   "profundidad": 15.0,
-  "latitud": 5.06889,
-  "longitud": -75.51738,
-  "estacion_id": "EST-MANIZALES-01",
-  "zona_poblada": true
+  "x": 450.0,
+  "y": 520.0,
+  "estacion_id": "EST-CENTRO-01",
+  "timestamp": "2026-09-22T17:30:00Z"
 }
 ```
 
@@ -43,13 +43,19 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   "data": {
     "id": 1001,
     "composite_key": {
-      "P": 1,
+      "P": 3,
       "M": 6.5,
       "I": 1001
     },
-    "prioridad": 1,
+    "prioridad": 3,
     "magnitud": 6.5,
     "profundidad": 15.0,
+    "x": 450.0,
+    "y": 520.0,
+    "estaciones_reportantes": ["EST-CENTRO-01"],
+    "revision": 1,
+    "estado_atencion": "Pendiente",
+    "zona_poblada": true,
     "estado": "ACTIVO",
     "avl_height": 1
   }
@@ -82,12 +88,12 @@ This document formally specifies the HTTP RESTful contracts for interacting with
 
 #### 2.2. Slice: Corregir Evento Sísmico (`PUT /api/v1/eventos/{id}/corregir`)
 **Comando:** `CorregirEventoCommand`  
-**Descripción:** Corrige los parámetros de magnitud o profundidad de un sismo. Si la prioridad $P$ cambia, la clave $K$ se re-calcula y el nodo es re-ubicado en el AVL.
+**Descripción:** Corrige los parámetros de magnitud o profundidad de un sismo. Si la prioridad $P$ cambia, la clave $K$ se re-calcula y el nodo es re-ubicado en el AVL. Incrementa el número de versión/revisión (`revision += 1`) y retorna su estado de atención a `'Pendiente'`.
 
 ##### Request Payload (JSON):
 ```json
 {
-  "nueva_magnitud": 7.2,
+  "nueva_magnitud": 6.2,
   "nueva_profundidad": 10.0,
   "razon_correccion": "Recalibración de sensor secundario"
 }
@@ -101,8 +107,10 @@ This document formally specifies the HTTP RESTful contracts for interacting with
   "message": "Evento sísmico corregido y re-estructurado en el árbol AVL.",
   "data": {
     "id": 1001,
-    "clave_anterior": {"P": 2, "M": 6.5, "I": 1001},
-    "nueva_clave": {"P": 1, "M": 7.2, "I": 1001},
+    "clave_anterior": {"P": 2, "M": 4.8, "I": 1001},
+    "nueva_clave": {"P": 3, "M": 6.2, "I": 1001},
+    "revision": 2,
+    "estado_atencion": "Pendiente",
     "rebalanceo_ejecutado": true
   }
 }
@@ -121,18 +129,82 @@ This document formally specifies the HTTP RESTful contracts for interacting with
 
 #### 2.3. Slice: Procesar Cola de Reportes (`POST /api/v1/reportes/procesar`)
 **Comando:** `ProcesarReporteCommand`  
-**Descripción:** Extrae el siguiente reporte de la Cola FIFO de recepción y lo convierte en un evento sísmico formal en el AVL.
+**Descripción:** Extrae el siguiente reporte de la Cola FIFO de recepción y lo procesa según la matriz de 5 situaciones de la Sección 6:
+- **Situación 1 (Identificador desconocido):** Se registra como nuevo evento sísmico en el AVL con estado `'Pendiente'`. La primera revisión puede ser superior a 1 si el reporte así lo indica.
+- **Situación 2 (Revisión mayor que la vigente, $r_{rep} > r_{vig}$):** Se sustituyen los datos del evento, se recalcula la prioridad $P$ y clave $K = (P, M, I)$. Si la clave cambia, se reubica el nodo en el AVL. Incrementa la revisión vigente y pasa a estado `'Pendiente'`. Si estaba archivado, se reactiva en el AVL.
+- **Situación 3 (Misma revisión e idénticos datos, $r_{rep} = r_{vig}$):** Se confirma el evento, se añade la estación reportante sin duplicar y se mantiene el estado previo.
+- **Situación 4 (Misma revisión pero datos distintos, $r_{rep} = r_{vig}$):** Se genera conflicto de telemetría, se rechaza el reporte y se preservan intactos los datos vigentes.
+- **Situación 5 (Revisión menor que la vigente, $r_{rep} < r_{vig}$):** Se reporta como desactualizado/antiguo y se descarta sin modificar el evento.
+- **Identificador eliminado:** Todo reporte cuyo identificador pertenezca a un evento eliminado es rechazado sistemáticamente.
 
 ##### Respuestas / Responses:
-- **`200 OK`**: Reporte procesado.
+- **`200 OK` (Situación 1 - Evento Creado):**
 ```json
 {
   "success": true,
-  "message": "Reporte procesado desde la cola FIFO e insertado en AVL.",
+  "message": "Reporte procesado: nuevo evento creado.",
   "data": {
-    "reportes_restantes_en_cola": 3,
-    "evento_creado_id": 1002
+    "action": "NUEVO_EVENTO",
+    "evento_id": 1002,
+    "situacion": "SITUACION_1_NUEVO_EVENTO"
   }
+}
+```
+- **`200 OK` (Situación 2 - Evento Actualizado o Reactivado):**
+```json
+{
+  "success": true,
+  "message": "Reporte procesado: evento actualizado con revisión 2.",
+  "data": {
+    "action": "ACTUALIZADO",
+    "evento_id": 1001,
+    "situacion": "SITUACION_2_REVISION_MAYOR",
+    "rebalanceo_ejecutado": true
+  }
+}
+```
+- **`200 OK` (Situación 3 - Evento Confirmado):**
+```json
+{
+  "success": true,
+  "message": "Reporte procesado: evento confirmado por estación EST-SUR-01.",
+  "data": {
+    "action": "CONFIRMADO",
+    "evento_id": 1001,
+    "situacion": "SITUACION_3_CONFIRMACION"
+  }
+}
+```
+- **`200 OK` (Situación 4 - Conflicto):**
+```json
+{
+  "success": false,
+  "message": "Conflicto de reporte: misma revisión con datos discrepantes. Reporte descartado.",
+  "data": {
+    "action": "CONFLICTO",
+    "evento_id": 1001,
+    "situacion": "SITUACION_4_CONFLICTO"
+  }
+}
+```
+- **`200 OK` (Situación 5 - Reporte Antiguo Descartado):**
+```json
+{
+  "success": false,
+  "message": "Reporte antiguo descartado (revisión 1 menor a vigente 2).",
+  "data": {
+    "action": "DESCARTADO_ANTIGUO",
+    "evento_id": 1001,
+    "situacion": "SITUACION_5_REVISION_MENOR"
+  }
+}
+```
+- **`400 Bad Request` (Cola vacía o ID eliminado):**
+```json
+{
+  "success": false,
+  "error_code": "EVENT_PREVIOUSLY_DELETED",
+  "message": "El reporte pertenece al evento 999 que fue eliminado del escenario y no admite nuevos reportes."
 }
 ```
 
@@ -378,5 +450,720 @@ This document formally specifies the HTTP RESTful contracts for interacting with
 }
 ```
 
+---
+
+#### 2.14. Slice: Revisar Evento Sísmico (`PUT /api/v1/eventos/{id}/revisar`)
+**Comando:** `RevisarEventoCommand`  
+**Descripción:** Marca un evento sísmico existente como auditado y atendido, transicionando su `estado_atencion` de `'Pendiente'` a `'Revisado'`. Esta acción es reversible a través de la Pila LIFO de deshacer.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Evento marcado como revisado exitosamente.
+```json
+{
+  "success": true,
+  "message": "Evento 1001 marcado como revisado.",
+  "data": {
+    "id": 1001,
+    "estado_atencion": "Revisado",
+    "estado_anterior": "Pendiente",
+    "revision": 1
+  }
+}
+```
+- **`404 Not Found`**: El evento no existe en el catálogo AVL.
+```json
+{
+  "success": false,
+  "error_code": "EVENT_NOT_FOUND",
+  "message": "No se encontró ningún evento sísmico con el identificador 9999."
+}
+```
+
+---
+
+#### 2.15. Slice: Listar Zonas del Escenario (`GET /api/v1/escenario/zonas`)
+**Descripción:** Retorna el conjunto inmutable de zonas rectangulares del escenario delimitadas en el plano cartesiano $[0.0, 1000.0]\text{ km} \times [0.0, 1000.0]\text{ km}$, indicando su clasificación de habitabilidad (poblada / no poblada).
+
+##### Respuestas / Responses:
+- **`200 OK`**: Lista de zonas del escenario.
+```json
+{
+  "success": true,
+  "total": 3,
+  "zonas": [
+    {
+      "id": "ZONA-CENTRAL",
+      "nombre": "Valle Central Metropolitano",
+      "x_min": 400.0,
+      "x_max": 650.0,
+      "y_min": 400.0,
+      "y_max": 650.0,
+      "es_poblada": true
+    },
+    {
+      "id": "ZONA-NORTE",
+      "nombre": "Cordillera Norte Forestal",
+      "x_min": 100.0,
+      "x_max": 400.0,
+      "y_min": 650.0,
+      "y_max": 950.0,
+      "es_poblada": false
+    },
+    {
+      "id": "ZONA-COSTA",
+      "nombre": "Litoral Costero Poblado",
+      "x_min": 50.0,
+      "x_max": 350.0,
+      "y_min": 50.0,
+      "y_max": 350.0,
+      "es_poblada": true
+    }
+  ]
+}
+```
+
+---
+
+#### 2.16. Slice: Consultar Evento Sísmico (`GET /api/v1/eventos/{id}`)
+**Query:** `ConsultarEventoQuery`  
+**Descripción:** Consulta exhaustiva en tiempo real de un identificador de evento en el escenario. Identifica su estado de ciclo de vida (`ACTIVO`, `ARCHIVADO`, `ELIMINADO`) y retorna, para eventos activos, las métricas topológicas de su nodo en el árbol AVL en tiempo $O(1)$: profundidad, altura, factor de balance y condición de raíz.
+
+##### Respuestas / Responses:
+- **`200 OK` (Evento Activo en AVL):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "estado": "ACTIVO",
+    "prioridad": 3,
+    "magnitud": 6.5,
+    "profundidad": 15.0,
+    "x": 450.0,
+    "y": 520.0,
+    "estaciones_reportantes": ["EST-CENTRO-01"],
+    "revision": 1,
+    "estado_atencion": "Pendiente",
+    "zona_poblada": true,
+    "timestamp": "2026-09-22T17:30:00Z",
+    "composite_key": {
+      "P": 3,
+      "M": 6.5,
+      "I": 1001
+    },
+    "nodo_avl": {
+      "profundidad_nodo": 1,
+      "altura_nodo": 2,
+      "factor_balance": 0,
+      "es_raiz": false
+    }
+  }
+}
+```
+
+- **`200 OK` (Evento Archivado tras Poda):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 505,
+    "estado": "ARCHIVADO",
+    "prioridad": 1,
+    "magnitud": 2.1,
+    "profundidad": 50.0,
+    "x": 100.0,
+    "y": 100.0,
+    "estaciones_reportantes": ["EST-NORTE-01"],
+    "revision": 1,
+    "estado_atencion": "Revisado",
+    "zona_poblada": false,
+    "timestamp": "2026-09-22T12:00:00Z",
+    "composite_key": {
+      "P": 1,
+      "M": 2.1,
+      "I": 505
+    },
+    "nodo_avl": null
+  }
+}
+```
+
+- **`200 OK` (Evento Eliminado):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 999,
+    "estado": "ELIMINADO",
+    "mensaje": "El evento 999 fue eliminado y su identificador no está disponible.",
+    "nodo_avl": null
+  }
+}
+```
+
+- **`404 Not Found` (Identificador Desconocido en el Escenario):**
+```json
+{
+  "success": false,
+  "error_code": "EVENT_NOT_FOUND",
+  "message": "No se encontró ningún evento sísmico con el identificador 77777 en estado activo, archivado o eliminado."
+}
+```
+
+---
+
+#### 2.17. Slice: Eliminar Evento Sísmico (`DELETE /api/v1/eventos/{id}`)
+**Comando:** `EliminarEventoCommand`  
+**Descripción:** Elimina un evento activo individualmente del árbol AVL garantizando la preservación estricta de sus nodos descendientes mediante rebalanceo por rotaciones AVL (LL, RR, LR, RL). El identificador del evento eliminado queda inhabilitado en `deleted_ids` para evitar su reutilización por nuevos eventos o reportes, y la acción queda registrada en la pila de Deshacer (Undo Stack) para posibilitar su reversión.
+
+##### Request Parameters:
+- `id` (path, integer): Identificador numérico del evento a eliminar.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Evento eliminado con éxito y AVL rebalanceado.
+```json
+{
+  "success": true,
+  "message": "Evento 1001 eliminado del árbol AVL preservando sus descendientes.",
+  "data": {
+    "id": 1001,
+    "rebalanceo_ejecutado": true,
+    "nueva_altura_avl": 2,
+    "total_nodos_restantes": 3
+  }
+}
+```
+
+- **`400 Bad Request`**: El evento ya había sido eliminado previamente.
+```json
+{
+  "success": false,
+  "error_code": "EVENT_ALREADY_DELETED",
+  "message": "El evento 1001 ya se encuentra eliminado del escenario sísmico."
+}
+```
+
+- **`404 Not Found`**: El evento no existe en el catálogo activo ni en el escenario.
+```json
+{
+  "success": false,
+  "error_code": "EVENT_NOT_FOUND",
+  "message": "No se encontró ningún evento activo con identificador 8888 para ser eliminado."
+}
+```
+
+---
+
+#### 2.18. Slice: Consultar Parámetros del Escenario (`GET /api/v1/escenario/parametros`)
+**Query:** `ConsultarParametrosQuery`  
+**Descripción:** Consulta los parámetros dinámicos del escenario sísmico: ventana de réplica $W$ (horas), radio de réplica $R$ (km), presupuesto de profundidad de acceso $L$ para eventos $P=3$, y umbral de antigüedad $T$ (horas) para archivo de subárboles.
+
+##### Respuestas / Responses:
+- **`200 OK`**:
+```json
+{
+  "success": true,
+  "data": {
+    "param_w_hours": 48.0,
+    "param_r_km": 40.0,
+    "param_budget_l": 3,
+    "param_archive_t_hours": 72.0
+  }
+}
+```
+
+---
+
+#### 2.19. Slice: Actualizar Parámetros del Escenario (`PUT /api/v1/escenario/parametros`)
+**Comando:** `ActualizarParametrosCommand`  
+**Descripción:** Actualiza los parámetros dinámicos del escenario ($W, R, L, T$). Dispara reactivamente la re-evaluación determinista de asociaciones de réplica en todo el catálogo si $W$ o $R$ cambiaron, y actualiza las marcas de acceso costoso en el AVL si $L$ cambió.
+
+##### Request Payload (JSON):
+```json
+{
+  "param_w_hours": 36.0,
+  "param_r_km": 50.0,
+  "param_budget_l": 4,
+  "param_archive_t_hours": 48.0
+}
+```
+
+##### Respuestas / Responses:
+- **`200 OK`**: Parámetros actualizados y asociaciones recalculadas.
+```json
+{
+  "success": true,
+  "message": "Parámetros del escenario actualizados correctamente.",
+  "data": {
+    "param_w_hours": 36.0,
+    "param_r_km": 50.0,
+    "param_budget_l": 4,
+    "param_archive_t_hours": 48.0,
+    "total_eventos_asociados": 2
+  }
+}
+```
+
+- **`400 Bad Request`**: Valores de parámetros inválidos ($W \le 0, R \le 0, L < 1, T \le 0$).
+```json
+{
+  "success": false,
+  "error_code": "INVALID_PARAMETERS",
+  "message": "Los parámetros W, R y T deben ser estrictamente positivos y L debe ser >= 1."
+}
+```
+
+---
+
+#### 2.20. Slice: Previsualizar Archivo de Subárbol (`GET /api/v1/avl/archivar-rama/previsualizar`)
+**Query:** `PrevisualizarArchivoRamaQuery`  
+**Descripción:** Evalúa recursivamente en post-orden los subárboles del AVL según la regla de la Sección 10: un subárbol $S$ es elegible si y solo si todos sus nodos tienen prioridad 1 (Baja) y su antigüedad supera $T$ horas respecto al reloj de simulación. Entre las opciones elegibles, selecciona deterministamente aquella con mayor tamaño $|S|$, mayor profundidad de raíz y menor ID. Devuelve el detalle algorítmico sin modificar el árbol.
+
+##### Query Parameters:
+- `t_horas` (opcional, float): Umbral de antigüedad temporal $T$ en horas (usa el del escenario si no se especifica).
+
+##### Respuestas / Responses:
+- **`200 OK` (Subárbol Elegible Encontrado):**
+```json
+{
+  "success": true,
+  "data": {
+    "elegible": true,
+    "justificacion": "Subárbol con raíz SIS-000501: tamaño |S|=3, profundidad=2, ID=501 (Regla: mayor tamaño -> mayor profundidad -> menor ID)",
+    "nodo_raiz": {
+      "id": 501,
+      "magnitud": 2.2,
+      "prioridad": 1
+    },
+    "tamano_subarbol": 3,
+    "profundidad_raiz": 2,
+    "eventos_a_archivar": [
+      { "id": 501, "magnitud": 2.2, "prioridad": 1 },
+      { "id": 502, "magnitud": 1.8, "prioridad": 1 },
+      { "id": 503, "magnitud": 1.5, "prioridad": 1 }
+    ]
+  }
+}
+```
+
+- **`200 OK` (Sin Subárboles Elegibles):**
+```json
+{
+  "success": true,
+  "data": {
+    "elegible": false,
+    "mensaje": "No se encontró ningún subárbol completo elegible para archivo con P=1 y antigüedad > 72.0 h.",
+    "eventos_a_archivar": []
+  }
+}
+```
+
+---
+
+#### 2.21. Slice: Recuperar Balance AVL tras Modo Estrés (`POST /api/v1/avl/recuperar-estres`)
+**Comando:** `RecuperarBalanceEstresCommand`  
+**Descripción:** Ejecuta la restauración estricta del balance AVL $|FB| \le 1$ tras periodos de inserción diferida (Modo Estrés). Realiza pasadas iterativas de rotaciones locales (LL, RR, LR, RL) sobre la memoria del árbol, equilibrando árboles con factores de balance $|FB| \ge 2$ o degenerados sin vaciar el árbol ni delegar a colecciones externas.
+
+##### Respuestas / Responses:
+- **`200 OK`**: Balance restaurado con éxito.
+```json
+{
+  "success": true,
+  "message": "Balance AVL restaurado exitosamente tras modo estrés. Rotaciones ejecutadas: 4.",
+  "data": {
+    "rotaciones_ejecutadas": 4,
+    "altura_final": 3,
+    "es_balanceado": true,
+    "total_nodos": 7
+  }
+}
+```
+
+---
+
+#### 2.22. Slice: Encolar Ráfaga de Prueba Mixta (`POST /api/v1/reportes/rafaga-prueba`)
+**Comando:** `EncolarRafagaPruebaCommand`  
+**Descripción:** Encola una ráfaga sintética de 5 reportes telemétricos mixtos (altas nuevas y correcciones de eventos existentes provenientes de distintas estaciones sismológicas) para verificar la ejecución secuencial FIFO y el reporte paso a paso de decisiones y rotaciones producidas.
+
+##### Respuestas / Responses:
+- **`200 OK`**:
+```json
+{
+  "success": true,
+  "message": "Ráfaga de 5 reportes de prueba encolada exitosamente.",
+  "total_encolados": 5,
+  "reportes": [
+    { "station_code": "EST-CENTRO-01", "event_id": 8100, "magnitud": 5.2, "profundidad": 15.0 },
+    { "station_code": "EST-OCCIDENTE-01", "event_id": 8101, "magnitud": 4.1, "profundidad": 30.0 },
+    { "station_code": "EST-SUR-01", "event_id": 8100, "magnitud": 5.4, "profundidad": 14.0 },
+    { "station_code": "EST-CENTRO-01", "event_id": 8102, "magnitud": 6.8, "profundidad": 10.0 },
+    { "station_code": "EST-NORTE-01", "event_id": 8103, "magnitud": 2.2, "profundidad": 45.0 }
+  ]
+}
+```
+
+---
+
+#### 2.23. Consultar K Eventos Pendientes de Atención (`GET /api/v1/consultas/pendientes`)
+**Query:** `ConsultarPrimerosKPendientesQuery`  
+**Descripción:** Retorna los primeros $k$ eventos activos en estado 'Pendiente', ordenados descendentemente por su clave compuesta $K = (P, M, I)$. Reporta la cantidad exacta de nodos examinados y justifica la poda (recorrido inorden inverso que se detiene al alcanzar $k$ elementos).
+
+##### Query Parameters:
+- `k` (int, default 5): Número entero positivo de eventos a consultar.
+
+##### Respuestas / Responses:
+- **`200 OK`**:
+```json
+{
+  "success": true,
+  "k": 3,
+  "nodos_examinados": 3,
+  "total_nodos_arbol": 15,
+  "justificacion_poda": "Recorrido inorden inverso (der -> raíz -> izq) podando subárboles una vez acumulados los k elementos.",
+  "eventos": [
+    { "id": 1005, "clave": { "P": 3, "M": 7.1, "I": 1005 }, "magnitud": 7.1, "prioridad": 3, "revisado": false }
+  ]
+}
+```
+
+---
+
+#### 2.24. Consultar Eventos por Intervalo de Magnitud (`GET /api/v1/consultas/magnitud`)
+**Query:** `ConsultarPorRangoMagnitudQuery`  
+**Descripción:** Retorna todos los eventos activos cuya magnitud esté dentro del intervalo inclusivo $[M_{min}, M_{max}]$, reportando nodos examinados y justificación algorítmica de poda.
+
+##### Query Parameters:
+- `m_min` (float, default 0.0)
+- `m_max` (float, default 10.0)
+
+##### Respuestas / Responses:
+- **`200 OK`**:
+```json
+{
+  "success": true,
+  "m_min": 5.0,
+  "m_max": 7.0,
+  "nodos_examinados": 8,
+  "total_encontrados": 2,
+  "justificacion_poda": "Poda recursiva de subárboles cuyas cotas lexicográficas descartan valores compatibles.",
+  "eventos": [ ... ]
+}
+```
+
+---
+
+#### 2.25. Consultar por Profundidad y Fechas (`GET /api/v1/consultas/profundidad-fechas`)
+**Query:** `ConsultarPorProfundidadYFechasQuery`  
+**Descripción:** Retorna los eventos activos cuya profundidad de hipocentro sea menor o igual a $H_{max}$ y hayan ocurrido dentro del intervalo inclusivo de fechas $[T_{inicio}, T_{fin}]$.
+
+##### Query Parameters:
+- `h_max` (float, default 50.0): Límite superior de profundidad en km.
+- `t_inicio` (str, ISO-8601 UTC)
+- `t_fin` (str, ISO-8601 UTC)
+
+---
+
+#### 2.26. Consultar Asociaciones y Réplicas de un Evento (`GET /api/v1/consultas/asociaciones/{event_id}`)
+**Query:** `ConsultarAsociacionesEventoQuery`  
+**Descripción:** Retorna los candidatos evaluados, la referencia determinista elegida y los eventos (activos y archivados) que utilizan a este evento como su referencia principal de réplica.
+
+##### Respuestas / Responses:
+- **`200 OK`**:
+```json
+{
+  "success": true,
+  "evento": { "id": 1002, "magnitud": 4.8, "es_activo": true },
+  "referencia_elegida": { "id": 1001, "magnitud": 6.8 },
+  "candidatos": [
+    { "id": 1001, "es_activo": true, "magnitud": 6.8, "distancia_km": 15.2, "delta_t_horas": 3.5 }
+  ],
+  "eventos_que_lo_referencian": []
+}
+```
+
+---
+
+#### 2.27. Consultar Eventos con Acceso Costoso (`GET /api/v1/consultas/acceso-costoso`)
+**Query:** `ConsultarAccesoCostosoQuery`  
+**Descripción:** Identifica los eventos activos de alta prioridad ($P=3$) cuya profundidad en el árbol supera el umbral $L$. Para cada uno, reporta su profundidad, el límite $L$ y el número exacto de nodos visitados en su búsqueda por clave.
+
+---
+
+#### 2.28. Benchmark Experimental Comparativo AVL vs BST (`POST /api/v1/consultas/benchmark-comparativo`)
+**Query:** `EjecutarBenchmarkComparativoQuery`  
+**Descripción:** Ejecuta una simulación rigurosa con $N$ nodos comparando alturas y visitas promedio de búsqueda entre el árbol AVL auto-balanceado y el árbol binario de búsqueda BST estándar bajo 4 patrones de inserción (ascendente, descendente, aleatorio, alternado).
+
+##### Request Payload:
+```json
+{
+  "tamano_n": 100,
+  "patron_orden": "todos"
+}
+```
+
+---
+
+#### 2.29. Exportar Escenario Completo (`POST /api/v1/escenario/exportar`)
+**Comando:** `ExportarEscenarioCommand`  
+**Descripción:** Exporta la totalidad del estado operativo a un archivo JSON estructurado (eventos activos, archivados, eliminados, parámetros, reloj, métricas y topología recursiva explícita).
+
+---
+
+#### 2.30. Importar Escenario por Inserciones (`POST /api/v1/escenario/importar-inserciones`)
+**Comando:** `ImportarInsercionesCommand`  
+**Descripción:** Reconstruye el escenario procesando secuencialmente cada evento como una inserción nueva en AVL y BST, validando unicidad de IDs numéricos y rebalanceando dinámicamente.
+
+---
+
+#### 2.31. Importar AVL por Topología Explícita (`POST /api/v1/escenario/importar-topologia`)
+**Comando:** `ImportarTopologiaCommand`  
+**Descripción:** Reconstruye la estructura exacta del árbol a partir de un árbol precalculado con validación atómica: si se viola el orden BST global o la reciprocidad de punteros, se rechaza; si existen nodos desbalanceados ($|FB| > 1$), conmuta a Modo Estrés si está autorizado.
+
+---
+
+#### 2.32. Geometría Cartesiana del Escenario en 2D (`GET /api/v1/escenario/geometria`)
+**Descripción:** Retorna los límites rectangulares de las zonas $[0, 1000]\text{ km}$, coordenadas de estaciones receptoras, epicentros de eventos con su radio/prioridad y los segmentos de enlace rectilíneos de réplicas.
+
+---
+
+#### 2.33. Versiones Persistentes con Nombre (`/api/v1/versiones`)
+- **`GET /api/v1/versiones`**: Lista los snapshots guardados en disco en `data/versions/`.
+- **`POST /api/v1/versiones/guardar`**: Guarda un nuevo snapshot con nombre inmutable y descripción.
+- **`POST /api/v1/versiones/{nombre}/restaurar`**: Restaura una versión previa (operación reversible mediante Deshacer).
+- **`DELETE /api/v1/versiones/{nombre}`**: Elimina una versión de disco.
+
+---
+
+#### 2.34. Auditoría Estructural e Indicadores (`/api/v1/auditoria`)
+- **`GET /api/v1/auditoria/verificar-estructura`**: Auditoría exhaustiva en $O(N)$ con cotas de ancestros, punteros recíprocos y factores de balance.
+- **`GET /api/v1/auditoria/indicadores-completos`**: Los 4 recorridos formales (inorden, preorden, postorden, por niveles) y matriz de rotaciones.
+- **`POST /api/v1/auditoria/resetear-contadores-rotacion`**: Reinicia a cero los contadores de rotaciones para nuevas pruebas.
+
+---
+
+#### 2.35. Red Nacional de Estaciones Sísmicas (`GET / POST /api/v1/escenario/estaciones`)
+
+##### 1. Listar Estaciones Telemétricas (`GET /api/v1/escenario/estaciones`)
+- **Método HTTP:** `GET`
+- **Ruta:** `/api/v1/escenario/estaciones` (alias: `/api/v1/estaciones`)
+- **Respuesta Exitosa (`200 OK`):**
+```json
+{
+  "success": true,
+  "total": 12,
+  "estaciones": [
+    {
+      "codigo": "EST-MANIZALES-01",
+      "nombre": "Estación Central Manizales (Caldas)",
+      "x": 380.0,
+      "y": 520.0,
+      "activo": true
+    },
+    {
+      "codigo": "EST-PEREIRA-01",
+      "nombre": "Estación Matecaña Pereira (Risaralda)",
+      "x": 270.0,
+      "y": 380.0,
+      "activo": true
+    }
+  ]
+}
+```
+
+##### 2. Registrar Nueva Estación de Monitoreo (`POST /api/v1/escenario/estaciones`)
+- **Método HTTP:** `POST`
+- **Ruta:** `/api/v1/escenario/estaciones` (alias: `/api/v1/estaciones`)
+- **Payload de Entrada (JSON):**
+```json
+{
+  "codigo": "EST-CARTAGENA-01",
+  "nombre": "Estación Sismológica Costera Cartagena (Bolívar)",
+  "x": 620.0,
+  "y": 910.0,
+  "activa": true
+}
+```
+- **Matriz Estricta de Respuestas y Errores:**
+  - **`201 Created`:**
+  ```json
+  {
+    "success": true,
+    "message": "Estación telemétrica 'EST-CARTAGENA-01' registrada exitosamente en el escenario.",
+    "data": {
+      "codigo": "EST-CARTAGENA-01",
+      "nombre": "Estación Sismológica Costera Cartagena (Bolívar)",
+      "x": 620.0,
+      "y": 910.0,
+      "activo": true
+    }
+  }
+  ```
+  - **`400 Bad Request` (Código ya existente o reglas de negocio quebradas):**
+  ```json
+  {
+    "detail": {
+      "code": "STATION_ALREADY_EXISTS",
+      "message": "Ya existe una estación de monitoreo registrada con el código 'EST-CARTAGENA-01'."
+    }
+  }
+  ```
+  - **`422 Unprocessable Entity` (Coordenadas fuera del plano $[0, 1000]\text{ km}$ o tipos inválidos):**
+  ```json
+  {
+    "detail": [
+      {
+        "loc": ["body", "x"],
+        "msg": "ensure this value is less than or equal to 1000.0",
+        "type": "value_error.number.not_le"
+      }
+    ]
+  }
+  ```
+  - **`500 Internal Server Error`:** Estructura de falla no prevista del servidor.
+
+---
+
+#### 2.15. Slice: Geometría Cartesiana del Escenario (`GET /api/v1/escenario/geometria`)
+- **Definición de Ruta:** `GET /api/v1/escenario/geometria`
+- **Descripción:** Retorna el plano métrico $[0, 1000] \times [0, 1000]\text{ km}$, zonas urbanas y rurales, red de estaciones telemétricas, catálogo de eventos con estado activo/archivado y segmentos de conexión directa entre eventos y sus réplicas asociadas.
+- **Payload de Entrada:** Ninguno (método GET idempotente).
+- **Matriz Estricta de Respuestas y Errores:**
+  - **`200 OK`:**
+  ```json
+  {
+    "success": true,
+    "plano": { "x_min": 0.0, "x_max": 1000.0, "y_min": 0.0, "y_max": 1000.0 },
+    "parametros": {
+      "param_w_hours": 48.0,
+      "param_r_km": 40.0,
+      "param_budget_l": 3,
+      "param_archive_t_hours": 72.0
+    },
+    "zonas": [
+      {
+        "codigo": "ZONA-CENTRAL",
+        "nombre": "Cordillera Central",
+        "x_min": 300.0,
+        "x_max": 700.0,
+        "y_min": 300.0,
+        "y_max": 700.0,
+        "es_poblada": true
+      }
+    ],
+    "estaciones": [
+      {
+        "codigo": "EST-MANIZALES-01",
+        "nombre": "Estación Central Manizales",
+        "x": 306.4,
+        "y": 546.8
+      }
+    ],
+    "eventos": [
+      {
+        "id": 1001,
+        "magnitud": 6.8,
+        "profundidad": 15.0,
+        "prioridad": 3,
+        "x": 306.4,
+        "y": 546.8,
+        "es_activo": true,
+        "es_replica": false,
+        "evento_referencia_id": null
+      }
+    ],
+    "enlaces_replicas": [
+      {
+        "origen_id": 1002,
+        "origen_x": 312.0,
+        "origen_y": 550.0,
+        "destino_id": 1001,
+        "destino_x": 306.4,
+        "destino_y": 546.8,
+        "distancia_km": 6.45
+      }
+    ]
+  }
+  ```
+  - **`500 Internal Server Error`:** Falla catastrófica en el cálculo de la geometría o el motor de asociaciones.
+
+---
+
+#### 2.16. Slice: Gestión de Versiones Persistentes en Disco
+- **Definición de Rutas:**
+  - `GET /api/v1/versiones`
+  - `POST /api/v1/versiones/guardar`
+  - `POST /api/v1/versiones/{nombre}/restaurar`
+  - `DELETE /api/v1/versiones/{nombre}`
+- **Payload de Guardado (`POST /api/v1/versiones/guardar`):**
+  ```json
+  {
+    "nombre": "ensayo_sismico_caldas_2026",
+    "descripcion": "Snapshot con 45 eventos y subárbol de réplicas en Manizales"
+  }
+  ```
+- **Matriz de Respuestas:**
+  - **`200 OK` (Listar Versiones):**
+  ```json
+  {
+    "success": true,
+    "total": 1,
+    "versiones": [
+      {
+        "nombre": "ensayo_sismico_caldas_2026",
+        "descripcion": "Snapshot con 45 eventos y subárbol de réplicas en Manizales",
+        "timestamp": "2026-09-23T20:45:00Z",
+        "reloj_simulacion": "2026-09-23T21:00:00Z",
+        "total_eventos_activos": 45,
+        "total_eventos_archivados": 12
+      }
+    ]
+  }
+  ```
+  - **`400 Bad Request`:** Nombre de versión vacío o inválido.
+  - **`404 Not Found`:** Versión solicitada no existe en disco al restaurar o eliminar.
+
+---
+
+#### 2.17. Slice: Auditoría Estructural e Indicadores Exhaustivos del AVL
+- **Definición de Rutas:**
+  - `GET /api/v1/auditoria/verificar-estructura`
+  - `GET /api/v1/auditoria/indicadores-completos`
+  - `POST /api/v1/auditoria/resetear-contadores-rotacion`
+- **Matriz de Respuestas (`GET /api/v1/auditoria/verificar-estructura`):**
+  ```json
+  {
+    "success": true,
+    "es_valido": true,
+    "total_nodos": 45,
+    "altura_calculada": 6,
+    "max_factor_balance": 1,
+    "errores_encontrados": [],
+    "certificacion": "ÁRBOL AVL 100% BALANCEADO Y HOMOLOGADO"
+  }
+  ```
+- **Matriz de Respuestas (`GET /api/v1/auditoria/indicadores-completos`):**
+  ```json
+  {
+    "success": true,
+    "rotaciones": {
+      "rotaciones_simples_izq": 8,
+      "rotaciones_simples_der": 6,
+      "rotaciones_dobles_izq_der": 3,
+      "rotaciones_dobles_der_izq": 2,
+      "total_giros_elementales": 24
+    },
+    "recorridos": {
+      "inorden": [1001, 1002, 1003],
+      "preorden": [1002, 1001, 1003],
+      "postorden": [1001, 1003, 1002],
+      "por_niveles": [[1002], [1001, 1003]]
+    },
+    "comparativa_bst": {
+      "altura_avl": 6,
+      "altura_bst": 14,
+      "ahorro_altura_porcentaje": 57.14
+    }
+  }
+  ```
 
 

@@ -36,11 +36,28 @@ export default function ModalDialog({
 
   if (!isOpen) return null;
 
-  const isLeft = position.includes('left');
-  const isBottom = position.includes('bottom');
+  const isCenter = position === 'center';
+  const isLeft = !isCenter && position.includes('left');
+  const isBottom = !isCenter && position.includes('bottom');
 
-  // Coordenadas calculadas para el perímetro libre (62px en vez de 74px)
-  const panelPlacementStyle = {
+  // Coordenadas calculadas según el tipo de presentación (centrado o mini-panel perimetral)
+  const panelPlacementStyle = isCenter ? {
+    position: 'relative',
+    width: maxWidth,
+    maxWidth: 'calc(100vw - 32px)',
+    maxHeight: maxHeight,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    borderRadius: '14px',
+    boxShadow: '0 20px 50px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.9)',
+    border: '1px solid var(--border-subtle)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    pointerEvents: 'auto',
+    zIndex: 1500
+  } : {
     position: 'absolute',
     top: isBottom ? 'auto' : '62px',
     bottom: isBottom ? '62px' : 'auto',
@@ -71,11 +88,17 @@ export default function ModalDialog({
         right: 0,
         bottom: 0,
         zIndex: 1500,
-        pointerEvents: 'none' // Permite interacción libre con el centro del mapa y HUD
+        pointerEvents: isCenter ? 'auto' : 'none',
+        display: isCenter ? 'flex' : 'block',
+        alignItems: isCenter ? 'center' : undefined,
+        justifyContent: isCenter ? 'center' : undefined,
+        backgroundColor: isCenter ? 'rgba(15, 23, 42, 0.45)' : 'transparent',
+        backdropFilter: isCenter ? 'blur(3px)' : undefined
       }}
+      onClick={isCenter ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}
     >
       <div
-        className={`glass-panel ${isLeft ? 'slide-in-left' : 'slide-in-right'}`}
+        className={`glass-panel ${isCenter ? 'scale-in' : (isLeft ? 'slide-in-left' : 'slide-in-right')}`}
         style={panelPlacementStyle}
       >
         {/* Encabezado Compacto */}

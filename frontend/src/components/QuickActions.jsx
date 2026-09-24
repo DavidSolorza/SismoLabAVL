@@ -9,6 +9,7 @@ export default function QuickActions({
   onArchiveBranch,
   onEnqueueSample,
   onQuickInsertPredefined,
+  onOpenStationsModal,
   onClearTree
 }) {
   const [selectedPresetId, setSelectedPresetId] = useState('');
@@ -52,13 +53,23 @@ export default function QuickActions({
               }}
             >
               <option value="">Insertar Predefinido (1 Clic)...</option>
-              {PREDEFINED_EVENTS.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre} (M{p.magnitud}, P{p.prioridadEsperada})
-                </option>
-              ))}
+              {PREDEFINED_EVENTS.map(p => {
+                const pLabel = p.prioridadEsperada === 3 ? 'Alta' : (p.prioridadEsperada === 2 ? 'Media' : 'Baja');
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre} (M{p.magnitud}, P{p.prioridadEsperada} {pLabel})
+                  </option>
+                );
+              })}
             </select>
           </div>
+
+          {onOpenStationsModal && (
+            <button className="btn-secondary" onClick={onOpenStationsModal} title="Administrar red nacional de estaciones telemétricas">
+              <Radio size={17} style={{ color: '#0284C7' }} />
+              <span>Estaciones Sísmicas</span>
+            </button>
+          )}
 
           <button className="btn-secondary" onClick={onEnqueueSample} title="Simular recepción telemétrica de estación y agregar a la Cola FIFO">
             <Radio size={17} style={{ color: '#D97706' }} />

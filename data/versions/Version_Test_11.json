@@ -1,0 +1,362 @@
+{
+  "nombre": "Version_Test_11",
+  "descripcion": "Prueba automatizada",
+  "guardado_en": "2026-09-24T02:10:25Z",
+  "estado": {
+    "reloj_simulacion": "2026-09-22T12:00:00Z",
+    "parametros": {
+      "w_horas": 48.0,
+      "r_km": 40.0,
+      "limite_l": 3,
+      "t_horas": 72.0
+    },
+    "eventos": [
+      {
+        "id": 1004,
+        "formatted_id": "SIS-001004",
+        "prioridad": 1,
+        "prioridad_etiqueta": "Baja",
+        "magnitud": 3.5,
+        "profundidad": 50.0,
+        "coordenadas": {
+          "x": 650.0,
+          "y": 650.0
+        },
+        "x": 650.0,
+        "y": 650.0,
+        "estacion_id": "EST-ARMENIA-01",
+        "estaciones_reportantes": [
+          "EST-ARMENIA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": false,
+        "timestamp": "2026-09-22T11:50:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 1,
+          "M": 3.5,
+          "I": 1004,
+          "formatted_id": "SIS-001004"
+        },
+        "composite_key": "K=[P:1, M:3.5, I:1004]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 2,
+        "antiguedad_segundos": 600,
+        "antiguedad_humana": "hace 10m"
+      },
+      {
+        "id": 1003,
+        "formatted_id": "SIS-001003",
+        "prioridad": 2,
+        "prioridad_etiqueta": "Media",
+        "magnitud": 4.6,
+        "profundidad": 25.0,
+        "coordenadas": {
+          "x": 600.0,
+          "y": 600.0
+        },
+        "x": 600.0,
+        "y": 600.0,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Revisado",
+        "zona_poblada": false,
+        "timestamp": "2026-09-22T11:30:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 2,
+          "M": 4.6,
+          "I": 1003,
+          "formatted_id": "SIS-001003"
+        },
+        "composite_key": "K=[P:2, M:4.6, I:1003]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 3,
+        "antiguedad_segundos": 1800,
+        "antiguedad_humana": "hace 30m"
+      },
+      {
+        "id": 1002,
+        "formatted_id": "SIS-001002",
+        "prioridad": 3,
+        "prioridad_etiqueta": "Alta",
+        "magnitud": 4.8,
+        "profundidad": 15.0,
+        "coordenadas": {
+          "x": 292.6,
+          "y": 532.2
+        },
+        "x": 292.6,
+        "y": 532.2,
+        "estacion_id": "EST-PEREIRA-01",
+        "estaciones_reportantes": [
+          "EST-PEREIRA-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": true,
+        "timestamp": "2026-09-22T11:15:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 3,
+          "M": 4.8,
+          "I": 1002,
+          "formatted_id": "SIS-001002"
+        },
+        "composite_key": "K=[P:3, M:4.8, I:1002]",
+        "candidatos_referencia": [
+          1001
+        ],
+        "evento_referencia_id": 1001,
+        "es_replica": true,
+        "acceso_costoso": false,
+        "costo_simulado": 1,
+        "antiguedad_segundos": 2700,
+        "antiguedad_humana": "hace 45m"
+      },
+      {
+        "id": 1001,
+        "formatted_id": "SIS-001001",
+        "prioridad": 3,
+        "prioridad_etiqueta": "Alta",
+        "magnitud": 6.5,
+        "profundidad": 12.0,
+        "coordenadas": {
+          "x": 306.4,
+          "y": 546.8
+        },
+        "x": 306.4,
+        "y": 546.8,
+        "estacion_id": "EST-MANIZALES-01",
+        "estaciones_reportantes": [
+          "EST-MANIZALES-01"
+        ],
+        "revision": 1,
+        "version": 1,
+        "estado_atencion": "Pendiente",
+        "zona_poblada": true,
+        "timestamp": "2026-09-22T10:00:00Z",
+        "estado": "ACTIVO",
+        "origin_report_id": null,
+        "clave_k": {
+          "P": 3,
+          "M": 6.5,
+          "I": 1001,
+          "formatted_id": "SIS-001001"
+        },
+        "composite_key": "K=[P:3, M:6.5, I:1001]",
+        "candidatos_referencia": [],
+        "evento_referencia_id": null,
+        "es_replica": false,
+        "acceso_costoso": false,
+        "costo_simulado": 2,
+        "antiguedad_segundos": 7200,
+        "antiguedad_humana": "hace 2h"
+      }
+    ],
+    "archivados": [],
+    "eliminados": [],
+    "topologia_avl": {
+      "raiz_id": 1002,
+      "total_nodos": 4,
+      "modo": "NORMAL",
+      "altura_arbol": 2,
+      "nodos": [
+        {
+          "id": 1002,
+          "evento": {
+            "id": 1002,
+            "formatted_id": "SIS-001002",
+            "prioridad": 3,
+            "prioridad_etiqueta": "Alta",
+            "magnitud": 4.8,
+            "profundidad": 15.0,
+            "coordenadas": {
+              "x": 292.6,
+              "y": 532.2
+            },
+            "x": 292.6,
+            "y": 532.2,
+            "estacion_id": "EST-PEREIRA-01",
+            "estaciones_reportantes": [
+              "EST-PEREIRA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": true,
+            "timestamp": "2026-09-22T11:15:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 3,
+              "M": 4.8,
+              "I": 1002,
+              "formatted_id": "SIS-001002"
+            },
+            "composite_key": "K=[P:3, M:4.8, I:1002]",
+            "candidatos_referencia": [
+              1001
+            ],
+            "evento_referencia_id": 1001,
+            "es_replica": true,
+            "acceso_costoso": false,
+            "costo_simulado": 1
+          },
+          "altura": 2,
+          "factor_balance": 1,
+          "hijo_izquierdo_id": 1004,
+          "hijo_derecho_id": 1001
+        },
+        {
+          "id": 1004,
+          "evento": {
+            "id": 1004,
+            "formatted_id": "SIS-001004",
+            "prioridad": 1,
+            "prioridad_etiqueta": "Baja",
+            "magnitud": 3.5,
+            "profundidad": 50.0,
+            "coordenadas": {
+              "x": 650.0,
+              "y": 650.0
+            },
+            "x": 650.0,
+            "y": 650.0,
+            "estacion_id": "EST-ARMENIA-01",
+            "estaciones_reportantes": [
+              "EST-ARMENIA-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": false,
+            "timestamp": "2026-09-22T11:50:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 1,
+              "M": 3.5,
+              "I": 1004,
+              "formatted_id": "SIS-001004"
+            },
+            "composite_key": "K=[P:1, M:3.5, I:1004]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 2
+          },
+          "altura": 1,
+          "factor_balance": -1,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": 1003
+        },
+        {
+          "id": 1001,
+          "evento": {
+            "id": 1001,
+            "formatted_id": "SIS-001001",
+            "prioridad": 3,
+            "prioridad_etiqueta": "Alta",
+            "magnitud": 6.5,
+            "profundidad": 12.0,
+            "coordenadas": {
+              "x": 306.4,
+              "y": 546.8
+            },
+            "x": 306.4,
+            "y": 546.8,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Pendiente",
+            "zona_poblada": true,
+            "timestamp": "2026-09-22T10:00:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 3,
+              "M": 6.5,
+              "I": 1001,
+              "formatted_id": "SIS-001001"
+            },
+            "composite_key": "K=[P:3, M:6.5, I:1001]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 2
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        },
+        {
+          "id": 1003,
+          "evento": {
+            "id": 1003,
+            "formatted_id": "SIS-001003",
+            "prioridad": 2,
+            "prioridad_etiqueta": "Media",
+            "magnitud": 4.6,
+            "profundidad": 25.0,
+            "coordenadas": {
+              "x": 600.0,
+              "y": 600.0
+            },
+            "x": 600.0,
+            "y": 600.0,
+            "estacion_id": "EST-MANIZALES-01",
+            "estaciones_reportantes": [
+              "EST-MANIZALES-01"
+            ],
+            "revision": 1,
+            "version": 1,
+            "estado_atencion": "Revisado",
+            "zona_poblada": false,
+            "timestamp": "2026-09-22T11:30:00Z",
+            "estado": "ACTIVO",
+            "origin_report_id": null,
+            "clave_k": {
+              "P": 2,
+              "M": 4.6,
+              "I": 1003,
+              "formatted_id": "SIS-001003"
+            },
+            "composite_key": "K=[P:2, M:4.6, I:1003]",
+            "candidatos_referencia": [],
+            "evento_referencia_id": null,
+            "es_replica": false,
+            "acceso_costoso": false,
+            "costo_simulado": 3
+          },
+          "altura": 0,
+          "factor_balance": 0,
+          "hijo_izquierdo_id": null,
+          "hijo_derecho_id": null
+        }
+      ]
+    }
+  }
+}

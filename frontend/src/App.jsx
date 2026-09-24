@@ -7,6 +7,14 @@ import EventList from './components/EventList';
 import QueueViewer from './components/QueueViewer';
 import PresetsModal from './components/PresetsModal';
 import ClockModal from './components/ClockModal';
+import EventDetailModal from './components/EventDetailModal';
+import ScenarioParamsModal from './components/ScenarioParamsModal';
+import ArchiveSubtreeModal from './components/ArchiveSubtreeModal';
+import QueriesModal from './components/QueriesModal';
+import PersistenceModal from './components/PersistenceModal';
+import AuditModal from './components/AuditModal';
+import GeographicMapModal from './components/GeographicMapModal';
+import StationsModal from './components/StationsModal';
 import Toast from './components/Toast';
 
 import {
@@ -14,9 +22,10 @@ import {
 } from 'lucide-react';
 
 import {
-  fetchFullDashboardState, fetchMetrics, fetchEvents, fetchTreeHierarchy, fetchBstHierarchy,
-  createEvent, correctEvent, enqueueReport, processNextReport, undoLastAction, archiveBranch,
-  setOperationalMode, clearAllTree, setSimulationClock, advanceSimulationClock
+  fetchFullDashboardState, fetchMetrics, fetchEvents, fetchEventById, fetchTreeHierarchy, fetchBstHierarchy,
+  createEvent, correctEvent, reviewEvent, deleteEvent, enqueueReport, processNextReport, undoLastAction, archiveBranch,
+  setOperationalMode, clearAllTree, setSimulationClock, advanceSimulationClock,
+  recoverFromStress, enqueueTestBurst
 } from './services/apiService';
 import { busService, BUS_EVENTS } from './services/busService';
 import { getAvailableId } from './data/predefinedEvents';
@@ -40,7 +49,19 @@ export default function App() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);     // Cola FIFO de Telemetría
   const [isPresetsOpen, setIsPresetsOpen] = useState(false); // Catálogo Rápido de Sismos
   const [isClockOpen, setIsClockOpen] = useState(false);     // Reloj de Simulación
+  const [isParamsOpen, setIsParamsOpen] = useState(false);   // Parámetros del Escenario (W, R, L, T)
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false); // Modal de Archivo de Subárbol
+  const [isQueriesOpen, setIsQueriesOpen] = useState(false); // Consultas Especializadas (Sección 11)
+  const [isPersistenceOpen, setIsPersistenceOpen] = useState(false); // Persistencia y Versiones (Sección 12-13)
+  const [isAuditOpen, setIsAuditOpen] = useState(false); // Auditoría de Estructura e Indicadores (Sección 14)
+  const [isGeoMapOpen, setIsGeoMapOpen] = useState(false); // Presentación Geográfica 2D (Sección 15)
+  const [isStationsOpen, setIsStationsOpen] = useState(false); // Red Nacional de Estaciones Sísmicas
+  const [lastStepReport, setLastStepReport] = useState(null); // Reporte paso a paso con rotaciones
   const [simulationClock, setSimulationClockState] = useState('2026-09-22T12:00:00Z');
+
+  // Estado de Consulta de Ficha Técnica / Node Metrics (Sección 6)
+  const [inspectEvent, setInspectEvent] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const showToast = (message, type = 'success', options = {}) => {
     // Si es una operación exitosa de rutina ('success'), no mostrar toast invasivo
@@ -150,6 +171,8 @@ export default function App() {
         id: targetId,
         magnitud: preset.magnitud,
         profundidad: preset.profundidad,
+        x: preset.x,
+        y: preset.y,
         latitud: preset.latitud,
         longitud: preset.longitud,
         estacion_id: preset.estacion_id,
@@ -172,6 +195,40 @@ export default function App() {
       showToast(err.message || 'No hay operaciones previas en la Pila LIFO para deshacer.', 'warning', {
         title: 'Pila LIFO Vacía'
       });
+    }
+  };
+
+  // Consultar ficha técnica y métricas de nodo en el AVL (Sección 6)
+  const handleInspectEvent = async (eventOrId) => {
+    try {
+      const eventId = typeof eventOrId === 'object' ? eventOrId.id : eventOrId;
+      const res = await fetchEventById(eventId);
+      setInspectEvent(res);
+      setIsDetailOpen(true);
+    } catch (err) {
+      showToast(err.message, 'error', { title: 'Consulta de Evento' });
+    }
+  };
+
+  // Eliminación individual de un evento activo (Sección 6)
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      const res = await deleteEvent(eventId);
+      showToast(res.message, 'success', { title: 'Evento Eliminado' });
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error', { title: 'Fallo al Eliminar Evento' });
+    }
+  };
+
+  // Marcar evento como Revisado (Sección 6)
+  const handleReviewEvent = async (eventId) => {
+    try {
+      const res = await reviewEvent(eventId);
+      showToast(res.message, 'success', { title: 'Evento Marcado como Revisado' });
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error', { title: 'Fallo al Revisar Evento' });
     }
   };
 
@@ -205,10 +262,43 @@ export default function App() {
     try {
       const res = await processNextReport();
       setQueueItems(prev => prev.slice(1));
+      if (res.data) {
+        setLastStepReport(res.data);
+      }
       showToast(res.message, 'success', { title: 'Paso FIFO Procesado' });
       loadData();
     } catch (err) {
       showToast(err.message, 'warning', { title: 'Cola Vacía' });
+    }
+  };
+
+  // Encolar ráfaga de prueba mixta (5 reportes)
+  const handleEnqueueTestBurst = async () => {
+    try {
+      const res = await enqueueTestBurst();
+      setQueueItems(prev => [...prev, ...(res.reportes || [])]);
+      showToast(
+        'Ráfaga de 5 reportes mixtos (altas y correcciones) encolada exitosamente.',
+        'warning',
+        { title: 'Telemetría Mixta Encolada' }
+      );
+    } catch (err) {
+      showToast(err.message || 'Error al encolar ráfaga de prueba', 'error');
+    }
+  };
+
+  // Recuperar balance total tras modo estrés
+  const handleRecoverStress = async () => {
+    try {
+      const res = await recoverFromStress();
+      showToast(
+        res.message || 'Árbol AVL balanceado con éxito tras modo estrés.',
+        'warning',
+        { title: 'Balance AVL Restaurado (Sección 8)' }
+      );
+      loadData();
+    } catch (err) {
+      showToast(err.message || 'Error al recuperar balance', 'error');
     }
   };
 
@@ -221,6 +311,7 @@ export default function App() {
         try {
           const res = await processNextReport();
           lastMessage = res.message;
+          if (res.data) setLastStepReport(res.data);
         } catch (e) {
           break;
         }
@@ -233,26 +324,9 @@ export default function App() {
     }
   };
 
-  // Archivar rama elegible de baja prioridad
+  // Archivar subárbol elegible (Sección 10)
   const handleArchiveBranch = () => {
-    showToast(
-      '¿Desea buscar y podar la sub-rama elegible de menor prioridad (P3) para compactar y balancear el árbol AVL?',
-      'confirm',
-      {
-        title: '¿Archivar Rama de Baja Prioridad (P3)?',
-        confirmText: 'Podar y Archivar P3',
-        cancelText: 'Cancelar',
-        onConfirm: async () => {
-          try {
-            const res = await archiveBranch(3);
-            showToast(res.message, 'success', { title: 'Rama P3 Archivada' });
-            loadData();
-          } catch (err) {
-            showToast(err.message, 'warning', { title: 'Poda no Realizada' });
-          }
-        }
-      }
-    );
+    setIsArchiveModalOpen(true);
   };
 
   // Limpiar y reiniciar totalmente el árbol AVL
@@ -374,10 +448,7 @@ export default function App() {
       <AVLVisualizer
         treeData={treeData}
         bstData={bstData}
-        onSelectEvent={(ev) => {
-          setEditEvent(ev);
-          setIsModalOpen(true);
-        }}
+        onSelectEvent={handleInspectEvent}
         // Triggers de Acciones y Modales
         onOpenCreateModal={() => { setEditEvent(null); setIsModalOpen(true); }}
         onOpenPresetsModal={() => setIsPresetsOpen(true)}
@@ -390,6 +461,13 @@ export default function App() {
         onArchiveBranch={handleArchiveBranch}
         onClearTree={handleClearTree}
         onToggleMode={handleToggleMode}
+        onRecoverStress={handleRecoverStress}
+        onOpenParamsModal={() => setIsParamsOpen(true)}
+        onOpenQueriesModal={() => setIsQueriesOpen(true)}
+        onOpenPersistenceModal={() => setIsPersistenceOpen(true)}
+        onOpenAuditModal={() => setIsAuditOpen(true)}
+        onOpenGeoMapModal={() => setIsGeoMapOpen(true)}
+        onOpenStationsModal={() => setIsStationsOpen(true)}
         onRefresh={loadData}
         currentMode={metrics?.modo_operacional || 'NORMAL'}
         eventsCount={events.length}
@@ -409,6 +487,7 @@ export default function App() {
         editEvent={editEvent}
         events={events}
         simulationClock={simulationClock}
+        onOpenStationsModal={() => setIsStationsOpen(true)}
         position={modalSlots.positions.eventModal || 'top-right'}
         maxHeight={modalSlots.getHeight(modalSlots.positions.eventModal)}
       />
@@ -453,6 +532,9 @@ export default function App() {
             setEditEvent(ev);
             setIsModalOpen(true);
           }}
+          onReviewEvent={handleReviewEvent}
+          onInspectEvent={handleInspectEvent}
+          onDeleteEvent={handleDeleteEvent}
         />
       </ModalDialog>
 
@@ -470,9 +552,11 @@ export default function App() {
         <QueueViewer
           queueItems={queueItems}
           onEnqueueSample={handleEnqueueSample}
+          onEnqueueTestBurst={handleEnqueueTestBurst}
           onProcessNext={handleProcessQueue}
           onProcessBatch={handleProcessBatch}
           loading={loading}
+          lastStepReport={lastStepReport}
         />
       </ModalDialog>
 
@@ -485,6 +569,70 @@ export default function App() {
         onSetClock={handleSetClock}
         position={modalSlots.positions.clock || 'top-left'}
         maxHeight={modalSlots.getHeight(modalSlots.positions.clock)}
+      />
+
+      {/* 7. Modal de Consulta Exhaustiva / Ficha Técnica (Sección 6) */}
+      <EventDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        eventDetail={inspectEvent}
+        onReviewEvent={handleReviewEvent}
+        onDeleteEvent={handleDeleteEvent}
+      />
+
+      {/* 8. Modal de Parámetros del Escenario (Secciones 7, 9 & 10) */}
+      <ScenarioParamsModal
+        isOpen={isParamsOpen}
+        onClose={() => setIsParamsOpen(false)}
+        onParamsUpdated={loadData}
+        showToast={showToast}
+      />
+
+      {/* 9. Modal de Archivo de Subárboles Completos (Sección 10) */}
+      <ArchiveSubtreeModal
+        isOpen={isArchiveModalOpen}
+        onClose={() => setIsArchiveModalOpen(false)}
+        onBranchArchived={loadData}
+        showToast={showToast}
+      />
+
+      {/* 10. Modal de Consultas Especializadas y Benchmark (Sección 11) */}
+      <QueriesModal
+        isOpen={isQueriesOpen}
+        onClose={() => setIsQueriesOpen(false)}
+        onSelectEvent={handleInspectEvent}
+        simulationClock={simulationClock}
+      />
+
+      {/* 11. Modal de Persistencia, Topología y Versiones (Secciones 12 y 13) */}
+      <PersistenceModal
+        isOpen={isPersistenceOpen}
+        onClose={() => setIsPersistenceOpen(false)}
+        onStateRestored={() => loadData(true)}
+        showToast={showToast}
+      />
+
+      {/* 12. Modal de Auditoría Estructural e Indicadores (Sección 14) */}
+      <AuditModal
+        isOpen={isAuditOpen}
+        onClose={() => setIsAuditOpen(false)}
+        showToast={showToast}
+      />
+
+      {/* 13. Modal de Presentación Geográfica 2D (Sección 15) */}
+      <GeographicMapModal
+        isOpen={isGeoMapOpen}
+        onClose={() => setIsGeoMapOpen(false)}
+        onSelectEvent={handleInspectEvent}
+        showToast={showToast}
+      />
+
+      {/* 14. Modal de Red Nacional de Estaciones Sísmicas */}
+      <StationsModal
+        isOpen={isStationsOpen}
+        onClose={() => setIsStationsOpen(false)}
+        showToast={showToast}
+        onStationCreated={() => loadData(true)}
       />
 
       {/* Notificaciones Flotantes Toast */}

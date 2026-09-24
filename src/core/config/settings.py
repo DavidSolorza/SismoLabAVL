@@ -43,5 +43,11 @@ class SystemSettings:
     MIN_MAGNITUDE: float = -2.0
     MAX_MAGNITUDE: float = 10.0
 
+    # Parámetros del escenario (Secciones 7, 9 y 10) / Scenario Parameters
+    DEFAULT_W_HOURS: float = 48.0         # Ventana temporal máxima para réplicas (horas)
+    DEFAULT_R_KM: float = 40.0            # Radio espacial máximo para réplicas (km)
+    DEFAULT_ACCESS_BUDGET_L: int = 3      # Presupuesto de profundidad de acceso L
+    DEFAULT_ARCHIVE_THRESHOLD_T: float = 72.0  # Antigüedad mínima T para archivar ramas (horas)
+
 
 settings = SystemSettings()

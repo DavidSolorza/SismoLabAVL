@@ -1,42 +1,82 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import {
   GitCommit, Crown, ZoomIn, ZoomOut, Maximize2, Minimize2,
   Move, Search, AlertTriangle, CheckCircle2, Split, Crosshair,
   PlusCircle, Sparkles, Undo2, BarChart3, Database, Clock,
-  Scissors, Trash2, RefreshCw, Activity, Layers, GitBranch, X
+  Scissors, Trash2, RefreshCw, Activity, Layers, GitBranch, X, Sliders,
+  FolderOpen, ShieldCheck, MapPin, Radio
 } from 'lucide-react';
 
 /**
  * Temas visuales por nivel de prioridad sísmica
  */
 const PRIORITY_THEMES = {
-  1: {
-    bgBadge: 'var(--p1-bg)',
-    textBadge: 'var(--p1-text)',
-    borderBadge: 'var(--p1-border)',
+  3: {
+    bgBadge: '#FEE2E2',
+    textBadge: '#991B1B',
+    borderBadge: '#FECACA',
     cardBorder: '#FCA5A5',
     cardShadow: 'rgba(239, 68, 68, 0.08)'
   },
   2: {
-    bgBadge: 'var(--p2-bg)',
-    textBadge: 'var(--p2-text)',
-    borderBadge: 'var(--p2-border)',
+    bgBadge: '#FEF3C7',
+    textBadge: '#92400E',
+    borderBadge: '#FDE68A',
     cardBorder: '#FCD34D',
     cardShadow: 'rgba(245, 158, 11, 0.08)'
   },
-  3: {
-    bgBadge: 'var(--p3-bg)',
-    textBadge: 'var(--p3-text)',
-    borderBadge: 'var(--p3-border)',
+  1: {
+    bgBadge: '#ECFDF5',
+    textBadge: '#065F46',
+    borderBadge: '#A7F3D0',
     cardBorder: '#6EE7B7',
     cardShadow: 'rgba(16, 185, 129, 0.08)'
   }
 };
 
 /**
+ * Generador de Trazado SVG Jerárquico Adaptativo (Zero Desfase)
+ * Construye un codo ortogonal con arcos cuadráticos suaves que se adapta
+ * a cualquier distancia relativa entre el padre y el hijo, mostrando claramente
+ * la relación de descendencia en el espacio disponible.
+ */
+function generateBranchPath(xp, yp, xc, yc) {
+  const dx = xc - xp;
+  const dy = yc - yp;
+
+  // Si están casi alineados verticalmente, trazo directo
+  if (Math.abs(dx) < 3) {
+    return `M ${xp} ${yp} V ${yc}`;
+  }
+
+  // Nivel del riel horizontal: intermedio entre yp y yc (~45% del espacio vertical disponible)
+  const yRail = yp + Math.max(10, dy * 0.45);
+  // Radio de redondeo suave del codo
+  const r = Math.max(0, Math.min(10, Math.abs(dx) / 2, (yRail - yp) / 2, (yc - yRail) / 2));
+
+  if (dx < 0) {
+    // Hijo a la izquierda (Rama MENOR <)
+    return `M ${xp} ${yp} ` +
+      `V ${yRail - r} ` +
+      `Q ${xp} ${yRail}, ${xp - r} ${yRail} ` +
+      `H ${xc + r} ` +
+      `Q ${xc} ${yRail}, ${xc} ${yRail + r} ` +
+      `V ${yc}`;
+  } else {
+    // Hijo a la derecha (Rama MAYOR >)
+    return `M ${xp} ${yp} ` +
+      `V ${yRail - r} ` +
+      `Q ${xp} ${yRail}, ${xp + r} ${yRail} ` +
+      `H ${xc - r} ` +
+      `Q ${xc} ${yRail}, ${xc} ${yRail + r} ` +
+      `V ${yc}`;
+  }
+}
+
+/**
  * Componente de Nodo Recursivo en Soft UI Ultra-Optimizado (Memoizado a 60 FPS)
  * Soporta renderizado adaptativo para Árbol AVL y Árbol BST estándar,
- * con resaltado en tiempo real según búsqueda en el mapa.
+ * con aristas dinámicas que eliminan cualquier desfase entre nodos.
  */
 const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNode, level = 0, relacion = null, treeType = 'AVL', searchQuery = '' }) {
   if (!node || !node.valor) return null;
@@ -48,6 +88,13 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
   const mag = typeof ev.magnitud === 'number' ? ev.magnitud.toFixed(1) : ev.magnitud;
   const esDesbalanceado = Math.abs(fb) > 1;
 
+  // Referencias para el cálculo milimétrico de las aristas SVG
+  const containerRef = useRef(null);
+  const cardRef = useRef(null);
+  const leftBranchRef = useRef(null);
+  const rightBranchRef = useRef(null);
+  const [edgeCoords, setEdgeCoords] = useState(null);
+
   // Comprobar si el nodo coincide con el término de búsqueda
   const matchesSearch = searchQuery.trim() !== '' && (
     ev.id.toString().includes(searchQuery.trim()) ||
@@ -56,37 +103,107 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
   );
 
   const theme = PRIORITY_THEMES[p] || PRIORITY_THEMES[3];
+  const hasChildren = Boolean(node.hijo_izquierdo || node.hijo_derecho);
+
+  // Medición geométrica de centros para conectar aristas sin desfase
+  const updateEdgeCoords = useCallback(() => {
+    if (!containerRef.current || !cardRef.current) return;
+    const container = containerRef.current;
+    const card = cardRef.current;
+
+    const cRect = container.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const scale = container.offsetWidth > 0 ? cRect.width / container.offsetWidth : 1;
+    if (scale <= 0) return;
+
+    // Centro inferior exacto de la tarjeta del nodo padre
+    const xp = (cardRect.left + cardRect.width / 2 - cRect.left) / scale;
+    const yp = (cardRect.bottom - cRect.top) / scale;
+
+    let leftCoord = null;
+    if (leftBranchRef.current) {
+      const el = leftBranchRef.current;
+      const target = el.querySelector('.tree-target-node') || el.querySelector('.avl-node-card') || el.firstElementChild || el;
+      const tRect = target.getBoundingClientRect();
+      leftCoord = {
+        x: (tRect.left + tRect.width / 2 - cRect.left) / scale,
+        y: (tRect.top - cRect.top) / scale,
+        hasRealNode: Boolean(node.hijo_izquierdo)
+      };
+    }
+
+    let rightCoord = null;
+    if (rightBranchRef.current) {
+      const el = rightBranchRef.current;
+      const target = el.querySelector('.tree-target-node') || el.querySelector('.avl-node-card') || el.firstElementChild || el;
+      const tRect = target.getBoundingClientRect();
+      rightCoord = {
+        x: (tRect.left + tRect.width / 2 - cRect.left) / scale,
+        y: (tRect.top - cRect.top) / scale,
+        hasRealNode: Boolean(node.hijo_derecho)
+      };
+    }
+
+    setEdgeCoords({ xp, yp, left: leftCoord, right: rightCoord });
+  }, [node]);
+
+  // Recalcular posiciones antes del repintado del navegador y en animaciones
+  useLayoutEffect(() => {
+    if (!hasChildren) return;
+    updateEdgeCoords();
+    const handle = requestAnimationFrame(updateEdgeCoords);
+    return () => cancelAnimationFrame(handle);
+  }, [hasChildren, updateEdgeCoords, treeType, searchQuery]);
+
+  // ResizeObserver para recalcular si subárboles cambian de dimensión dinámicamente
+  useEffect(() => {
+    if (!hasChildren || !containerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      updateEdgeCoords();
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [hasChildren, updateEdgeCoords]);
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      position: 'relative', margin: '0 8px'
-    }}>
+    <div
+      ref={containerRef}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        position: 'relative', margin: '0 8px'
+      }}
+    >
       
       {/* Indicador de relación con el padre (Menor < o Mayor >) */}
       {relacion && (
-        <div style={{
-          fontSize: '0.62rem',
-          fontWeight: 800,
-          padding: '2px 6px',
-          borderRadius: '5px',
-          marginBottom: '5px',
-          letterSpacing: '0.03em',
-          backgroundColor: relacion === 'MENOR' ? '#EFF6FF' : '#FEF2F2',
-          color: relacion === 'MENOR' ? '#1D4ED8' : '#B91C1C',
-          border: `1px solid ${relacion === 'MENOR' ? '#BFDBFE' : '#FECACA'}`,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '2px',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
+        <div
+          className="tree-target-node"
+          style={{
+            fontSize: '0.62rem',
+            fontWeight: 800,
+            padding: '2px 6px',
+            borderRadius: '5px',
+            marginBottom: '5px',
+            letterSpacing: '0.03em',
+            backgroundColor: relacion === 'MENOR' ? '#EFF6FF' : '#FEF2F2',
+            color: relacion === 'MENOR' ? '#1D4ED8' : '#B91C1C',
+            border: `1px solid ${relacion === 'MENOR' ? '#BFDBFE' : '#FECACA'}`,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '2px',
+            boxShadow: 'var(--shadow-sm)',
+            position: 'relative',
+            zIndex: 10
+          }}
+        >
           {relacion === 'MENOR' ? '← MENOR (<)' : 'MAYOR (>) →'}
         </div>
       )}
 
       {/* Tarjeta del Nodo */}
       <div
-        className="avl-node-card"
+        ref={cardRef}
+        className={`avl-node-card ${!relacion ? 'tree-target-node' : ''}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelectNode(ev);
@@ -96,13 +213,13 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
           borderRadius: '11px',
           border: matchesSearch
             ? '3px solid #F59E0B'
-            : (esDesbalanceado && treeType === 'BST' ? '2px dashed #EF4444' : `2px solid ${theme.cardBorder}`),
+            : (ev.acceso_costoso ? '2px dashed #EA580C' : (esDesbalanceado && treeType === 'BST' ? '2px dashed #EF4444' : `2px solid ${theme.cardBorder}`)),
           backgroundColor: matchesSearch
             ? '#FEF3C7'
-            : (esDesbalanceado && treeType === 'BST' ? '#FFF5F5' : '#FFFFFF'),
+            : (ev.acceso_costoso ? '#FFFBEB' : (esDesbalanceado && treeType === 'BST' ? '#FFF5F5' : '#FFFFFF')),
           boxShadow: matchesSearch
             ? '0 0 0 3px rgba(245, 158, 11, 0.35), 0 6px 16px rgba(245, 158, 11, 0.2)'
-            : `0 3px 10px ${theme.cardShadow}`,
+            : (ev.acceso_costoso ? '0 0 0 2px rgba(234, 88, 12, 0.2), 0 3px 10px rgba(234, 88, 12, 0.1)' : `0 3px 10px ${theme.cardShadow}`),
           cursor: 'pointer',
           minWidth: '124px',
           textAlign: 'center',
@@ -111,7 +228,7 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
           transform: matchesSearch ? 'scale(1.06)' : 'none',
           transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
         }}
-        title={`Clic para inspeccionar sismo SIS-${ev.id} (M=${mag}, P=${p})`}
+        title={`Clic para inspeccionar sismo SIS-${ev.id} (M=${mag}, P=${p})${ev.acceso_costoso ? ' [⚡ Acceso Costoso]' : ''}${ev.es_replica ? ` [Réplica de #${ev.evento_referencia_id}]` : ''}`}
       >
         {/* Corona Sutil para el Nodo Raíz */}
         {isRoot && (
@@ -191,29 +308,103 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
         <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>
           {ev.formatted_id || `SIS-${ev.id}`} • h={h}
         </div>
+
+        {/* Marcadores Reactivos de Sección 9 y Sección 7 */}
+        {ev.acceso_costoso && (
+          <div style={{
+            fontSize: '0.58rem', fontWeight: 800, padding: '1px 4px', borderRadius: '4px',
+            backgroundColor: '#FFEDD5', color: '#C2410C', border: '1px solid #FDBA74',
+            marginTop: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px'
+          }}>
+            ⚡ Costoso (c={ev.costo_simulado ?? (level + 1)})
+          </div>
+        )}
+
+        {ev.es_replica && (
+          <div style={{
+            fontSize: '0.56rem', fontWeight: 700, padding: '1px 4px', borderRadius: '4px',
+            backgroundColor: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE',
+            marginTop: '2px'
+          }}>
+            Réplica SIS-{String(ev.evento_referencia_id).padStart(6, '0')}
+          </div>
+        )}
       </div>
 
-      {/* Conexiones SVG y Subárboles Izquierdo / Derecho */}
-      {(node.hijo_izquierdo || node.hijo_derecho) && (
-        <div style={{ width: '100%', marginTop: '9px' }}>
-          {/* Líneas de conexión */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-around',
-            width: '100%', height: '18px', position: 'relative'
-          }}>
-            <svg style={{ position: 'absolute', top: '-9px', left: 0, width: '100%', height: '28px', pointerEvents: 'none' }}>
-              {node.hijo_izquierdo && (
-                <line x1="50%" y1="0" x2="25%" y2="28" stroke="#94A3B8" strokeWidth="1.8" strokeDasharray="3 3" />
-              )}
-              {node.hijo_derecho && (
-                <line x1="50%" y1="0" x2="75%" y2="28" stroke="#94A3B8" strokeWidth="1.8" strokeDasharray="3 3" />
-              )}
-            </svg>
-          </div>
+      {/* Aristas SVG Jerárquicas Adaptativas (Zero Desfase y Codos Suaves) */}
+      {hasChildren && edgeCoords && (
+        <svg
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            overflow: 'visible',
+            zIndex: 1
+          }}
+        >
+          {/* Rama Izquierda (MENOR <) */}
+          {edgeCoords.left && (
+            <path
+              d={generateBranchPath(edgeCoords.xp, edgeCoords.yp, edgeCoords.left.x, edgeCoords.left.y)}
+              fill="none"
+              stroke={edgeCoords.left.hasRealNode ? '#2563EB' : '#CBD5E1'}
+              strokeWidth={edgeCoords.left.hasRealNode ? '2.4' : '1.5'}
+              strokeDasharray={edgeCoords.left.hasRealNode ? 'none' : '4 4'}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+          {/* Rama Derecha (MAYOR >) */}
+          {edgeCoords.right && (
+            <path
+              d={generateBranchPath(edgeCoords.xp, edgeCoords.yp, edgeCoords.right.x, edgeCoords.right.y)}
+              fill="none"
+              stroke={edgeCoords.right.hasRealNode ? '#DC2626' : '#CBD5E1'}
+              strokeWidth={edgeCoords.right.hasRealNode ? '2.4' : '1.5'}
+              strokeDasharray={edgeCoords.right.hasRealNode ? 'none' : '4 4'}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Punto de anclaje común en la base del padre */}
+          <circle
+            cx={edgeCoords.xp}
+            cy={edgeCoords.yp}
+            r="3.2"
+            fill="#475569"
+          />
+
+          {/* Puntos de anclaje de entrada en los hijos activos */}
+          {edgeCoords.left && edgeCoords.left.hasRealNode && (
+            <circle
+              cx={edgeCoords.left.x}
+              cy={edgeCoords.left.y}
+              r="2.5"
+              fill="#2563EB"
+            />
+          )}
+          {edgeCoords.right && edgeCoords.right.hasRealNode && (
+            <circle
+              cx={edgeCoords.right.x}
+              cy={edgeCoords.right.y}
+              r="2.5"
+              fill="#DC2626"
+            />
+          )}
+        </svg>
+      )}
+
+      {/* Subárboles Izquierdo / Derecho */}
+      {hasChildren && (
+        <div style={{ width: '100%', marginTop: '30px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
             {/* Rama Izquierda (MENORES <) */}
-            <div style={{ opacity: node.hijo_izquierdo ? 1 : 0.35 }}>
+            <div ref={leftBranchRef} style={{ opacity: node.hijo_izquierdo ? 1 : 0.4 }}>
               {node.hijo_izquierdo ? (
                 <TreeNode
                   node={node.hijo_izquierdo}
@@ -224,18 +415,21 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
                   searchQuery={searchQuery}
                 />
               ) : (
-                <div style={{
-                  fontSize: '0.66rem', color: 'var(--text-muted)',
-                  textAlign: 'center', padding: '5px 7px',
-                  backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
-                }}>
+                <div
+                  className="tree-target-node"
+                  style={{
+                    fontSize: '0.66rem', color: 'var(--text-muted)',
+                    textAlign: 'center', padding: '5px 7px',
+                    backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
+                  }}
+                >
                   Izq (&lt; Menor): ∅
                 </div>
               )}
             </div>
 
             {/* Rama Derecha (MAYORES >) */}
-            <div style={{ opacity: node.hijo_derecho ? 1 : 0.35 }}>
+            <div ref={rightBranchRef} style={{ opacity: node.hijo_derecho ? 1 : 0.4 }}>
               {node.hijo_derecho ? (
                 <TreeNode
                   node={node.hijo_derecho}
@@ -246,11 +440,14 @@ const TreeNode = React.memo(function TreeNode({ node, isRoot = false, onSelectNo
                   searchQuery={searchQuery}
                 />
               ) : (
-                <div style={{
-                  fontSize: '0.66rem', color: 'var(--text-muted)',
-                  textAlign: 'center', padding: '5px 7px',
-                  backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
-                }}>
+                <div
+                  className="tree-target-node"
+                  style={{
+                    fontSize: '0.66rem', color: 'var(--text-muted)',
+                    textAlign: 'center', padding: '5px 7px',
+                    backgroundColor: '#F8FAFC', borderRadius: '5px', border: '1px dashed #CBD5E1'
+                  }}
+                >
                   Der (&gt; Mayor): ∅
                 </div>
               )}
@@ -287,7 +484,14 @@ export default function AVLVisualizer({
   queueCount = 0,
   loading = false,
   simulationClock = '2026-09-22T12:00:00Z',
-  onOpenClockModal
+  onOpenClockModal,
+  onOpenParamsModal,
+  onOpenQueriesModal,
+  onOpenPersistenceModal,
+  onOpenAuditModal,
+  onOpenGeoMapModal,
+  onOpenStationsModal,
+  onRecoverStress
 }) {
   const [viewMode, setViewMode] = useState('dual'); // 'dual' | 'avl' | 'bst'
   const [zoom, setZoom] = useState(1.0); // Predeterminado a 100% (visualización nítida y grande desde el inicio)
@@ -453,6 +657,30 @@ export default function AVLVisualizer({
           <Activity size={11} />
           <span>Estado: {currentMode}</span>
         </button>
+
+        {currentMode === 'STRESS' && onRecoverStress && (
+          <button
+            onClick={onRecoverStress}
+            className="btn-secondary"
+            style={{
+              padding: '3px 8px',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              borderRadius: '7px',
+              backgroundColor: '#DCFCE7',
+              color: '#166534',
+              border: '1px solid #BBF7D0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer'
+            }}
+            title="Restaurar balance AVL total (Sección 8)"
+          >
+            <CheckCircle2 size={11} />
+            <span>Recuperar Balance</span>
+          </button>
+        )}
 
         <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
@@ -753,16 +981,94 @@ export default function AVLVisualizer({
 
         <div style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
-        {/* Botón Archivar Rama P3 */}
+        {/* Botón Parámetros del Escenario (W, R, L, T) */}
+        {onOpenParamsModal && (
+          <button
+            onClick={onOpenParamsModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#B45309', backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}
+            title="Configurar parámetros reactivos del escenario: W, R, L, T"
+          >
+            <Sliders size={12} style={{ color: '#D97706' }} />
+            <span>Parámetros</span>
+          </button>
+        )}
+
+        {/* Botón Archivar Subárbol (Sección 10) */}
         <button
           onClick={onArchiveBranch}
           className="btn-secondary"
           style={{ padding: '5px 8px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}
-          title="Podar y archivar rama elegible de baja prioridad (P3)"
+          title="Evaluar y podar subárboles completos elegibles de baja prioridad P=1 con antigüedad > T horas (Sección 10)"
         >
           <Scissors size={12} />
-          <span>Archivar P3</span>
+          <span>Archivar Subárbol (P1)</span>
         </button>
+
+        {/* Botón Consultas Especializadas (Sección 11) */}
+        {onOpenQueriesModal && (
+          <button
+            onClick={onOpenQueriesModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#1D4ED8', borderColor: '#BFDBFE' }}
+            title="Consultas avanzadas: K prioritarios, rango magnitud, profundidad y fechas, asociaciones y benchmark (Sección 11)"
+          >
+            <Search size={12} style={{ color: '#2563EB' }} />
+            <span>Consultas</span>
+          </button>
+        )}
+
+        {/* Botón Persistencia & Versiones (Sección 12 y 13) */}
+        {onOpenPersistenceModal && (
+          <button
+            onClick={onOpenPersistenceModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#0E7490', borderColor: '#A5F3FC' }}
+            title="Exportar e importar escenario por inserciones o topología, y gestionar versiones persistentes (Secciones 12 y 13)"
+          >
+            <FolderOpen size={12} style={{ color: '#0891B2' }} />
+            <span>Persistencia</span>
+          </button>
+        )}
+
+        {/* Botón Auditoría Estructural (Sección 14) */}
+        {onOpenAuditModal && (
+          <button
+            onClick={onOpenAuditModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#15803D', borderColor: '#BBF7D0' }}
+            title="Auditoría exhaustiva de la estructura AVL, 4 recorridos formales y matriz de rotaciones (Sección 14)"
+          >
+            <ShieldCheck size={12} style={{ color: '#16A34A' }} />
+            <span>Auditoría</span>
+          </button>
+        )}
+
+        {/* Botón Mapa Cartesiano 2D (Sección 15) */}
+        {onOpenGeoMapModal && (
+          <button
+            onClick={onOpenGeoMapModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#7E22CE', borderColor: '#E9D5FF' }}
+            title="Presentación geográfica en plano cartesiano 2D [0, 1000] km: zonas, estaciones y réplicas (Sección 15)"
+          >
+            <MapPin size={12} style={{ color: '#9333EA' }} />
+            <span>Mapa 2D</span>
+          </button>
+        )}
+
+        {/* Botón Estaciones de Monitoreo */}
+        {onOpenStationsModal && (
+          <button
+            onClick={onOpenStationsModal}
+            className="btn-secondary"
+            style={{ padding: '5px 8px', fontSize: '0.72rem', color: '#0369A1', borderColor: '#BAE6FD' }}
+            title="Red nacional de estaciones telemétricas: ver coordenadas y registrar nuevas estaciones"
+          >
+            <Radio size={12} style={{ color: '#0284C7' }} />
+            <span>Estaciones</span>
+          </button>
+        )}
 
         {/* Botón Vaciar Árbol */}
         <button

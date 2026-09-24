@@ -9,7 +9,7 @@ Strictly based on 1_árbol_bst.py implementation with support for Composite Key 
 and seismic entities. Enables comparative benchmarking against AVL Tree.
 """
 
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, Tuple
 
 class NodoBST:
     """
@@ -27,6 +27,14 @@ class NodoBST:
 
     def setValor(self, valor: Any) -> None:
         self.valor = valor
+
+    @property
+    def clave(self) -> Any:
+        return getattr(self.valor, 'composite_key', self.valor)
+
+    def getClave(self) -> Any:
+        return self.clave
+
 
     def getHijoIzquierdo(self) -> Optional['NodoBST']:
         return self.hijoIzquierdo
@@ -297,3 +305,35 @@ class ArbolBST:
             "hijo_izquierdo": self._nodo_to_dict(nodo.getHijoIzquierdo()),
             "hijo_derecho": self._nodo_to_dict(nodo.getHijoDerecho())
         }
+
+    def contar_nodos(self) -> int:
+        """Retorna el número total de nodos en el BST"""
+        return len(self.inorden())
+
+    def contar_hojas(self) -> int:
+        """Retorna el número de nodos hoja (sin hijos) en el BST"""
+        def _hojas(nodo: Optional[NodoBST]) -> int:
+            if nodo is None:
+                return 0
+            if nodo.getHijoIzquierdo() is None and nodo.getHijoDerecho() is None:
+                return 1
+            return _hojas(nodo.getHijoIzquierdo()) + _hojas(nodo.getHijoDerecho())
+        return _hojas(self.raiz)
+
+    def buscar_clave_con_comparaciones(self, target_key: Any) -> Tuple[Optional[NodoBST], int]:
+        """
+        Busca un nodo por clave midiendo el número exacto de comparaciones de clave realizadas.
+        Retorna (nodo_encontrado_o_None, comparaciones_realizadas).
+        """
+        comparaciones = 0
+        actual = self.raiz
+        while actual is not None:
+            comparaciones += 1
+            clave_actual = getattr(actual.getValor(), 'composite_key', actual.getValor())
+            if clave_actual == target_key:
+                return actual, comparaciones
+            if target_key < clave_actual:
+                actual = actual.getHijoIzquierdo()
+            else:
+                actual = actual.getHijoDerecho()
+        return None, comparaciones
